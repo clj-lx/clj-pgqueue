@@ -39,7 +39,7 @@
    :channel    channel})
   
 (defn start [queue]
-  (let [conn   (.getConnection ds)
+  (let [conn   (.getConnection (:datasource queue))
         listen (jdbc/execute! conn [(str "LISTEN " (:channel queue))])]
     (assoc queue :connection conn)))
        
