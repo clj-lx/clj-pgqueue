@@ -17,7 +17,7 @@ your option) any later version.
 
 ## Testing
 
-	clj -A:test:runner
+	clj -R:test -A:runner
 
 
 
