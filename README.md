@@ -17,7 +17,9 @@ your option) any later version.
 
 ## Testing
 
-	clj -R:test -A:runner
+	clojure  -R:test -A:test-runner -m kaocha.runner
+    ;; or
+    ./bin/kaocha
 
 
 
