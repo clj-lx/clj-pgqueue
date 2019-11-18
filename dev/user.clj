@@ -57,10 +57,9 @@
 (comment
   (def queue
     (delay
-     (let [queue (new-queue ds "jobs_status_channel")]
-       (-> queue
-           start
-           (listen #(println (java.util.Date.) %)))))))
+     (-> (new-queue ds "jobs_status_channel")
+         start
+         (listen #(println (java.util.Date.) %))))))
  
 
 (comment
