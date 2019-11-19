@@ -1,0 +1,15 @@
+name: Clojure CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Show dependencies
+      run: clojure -Atest -Stree
+    - name: Run tests with Kaocha Test Runner
+      run: ./bin/kaocha
