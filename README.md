@@ -1,3 +1,4 @@
+![](https://github.com/clj-lx/clj-pgqueue/workflows/Clojure%20CI/badge.svg)
 # clj-pgqueue
 
 A Clojure library designed to use Postgres as a queue storage.
