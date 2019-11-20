@@ -1,7 +1,7 @@
-(ns mping.clj-pgqueue-test
+(ns clj-lx.clj-pgqueue-test
   (:require [clojure.test :refer :all]
             [next.jdbc :as jdbc]
-            [mping.clj-pgqueue :as clj-queue])
+            [clj-lx.clj-pgqueue :as clj-queue])
   (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
 
 ;; the test datasource
@@ -34,7 +34,7 @@
 
 
 (comment
-  (def db {:dbtype "postgresql" :dbname "mping"})
+  (def db {:dbtype "postgresql" :dbname "cljlx"})
   (def ds (jdbc/get-datasource db))
 
   (def queue
