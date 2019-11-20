@@ -1,4 +1,4 @@
-(ns mping.clj-pgqueue
+(ns clj-lx.clj-pgqueue
   (:require [next.jdbc :as jdbc])
   (:import [org.postgresql PGConnection]))
 
