@@ -25,4 +25,9 @@ your option) any later version.
 
 ## Cider
 
-	clj -A:cider-clj:dev
+	clj -A:cider-clj:dev:test
+    
+    
+## Run tests from repl
+
+    (user/run-all-tests)
