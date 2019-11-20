@@ -10,6 +10,12 @@
               :extra-deps  {io.zonky.test/embedded-postgres {:mvn/version "1.2.6"}
                             lambdaisland/kaocha             {:mvn/version "0.0-529"}
                             org.clojure/test.check          {:mvn/version "0.10.0"}}}
+
+  :nrepl {:extra-deps {nrepl {:mvn/version "RELEASE"}}
+          :main-opts ["-m" "nrepl.cmdline"]}
+
+  :jar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
+        :main-opts ["-m" "hf.depstar.jar"]}
   
   :test-runner
   {:extra-paths ["test"]
