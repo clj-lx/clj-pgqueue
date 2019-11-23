@@ -21,10 +21,11 @@
 (deftest test-listen-emits-notification
   (testing "Listen emits a notification"
     (let [notif-called? (atom false)
-          queue         (-> (clj-queue/new->PGQueue *test-ds* "jobs_status_channel" 1000)
+          queue         (-> (clj-queue/new->PGQueue {:datasource *test-ds*
+                                                     :channel "jobs_status_channel"
+                                                     :polling-interval 500})
                             (q/start-queue))
-          _ (println ">>>>>>>>>>>>" queue)
-          subscrtiber   (q/subscribe queue #(do
+          _subscriber   (q/subscribe queue #(do
                                              (println "[TEST] GOT NOTIFICATION" (java.util.Date.) %)
                                              (reset! notif-called? true)))]
       (q/push queue nil)
