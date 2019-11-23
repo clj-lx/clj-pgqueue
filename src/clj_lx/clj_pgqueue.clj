@@ -29,9 +29,9 @@
      (loop []
        (let [notifications (.getNotifications pgconn)]
          (doseq [^org.postgresql.core.Notification _wakeup notifications]
-           (try
-             (transactional-claim! ds callback)
-             (catch Exception e (ex-handler e)))))
+             (try
+               (transactional-claim! ds callback)
+               (catch Exception e (ex-handler e))))) ;; todo capture the job id ( move try-catch to other function )
        (Thread/sleep poll)
        (recur)))))
 

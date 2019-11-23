@@ -1,48 +1,39 @@
 (ns clj-lx.clj-pgqueue-test
   (:require [clojure.test :refer :all]
-            [next.jdbc :as jdbc]
             [clj-lx.clj-pgqueue :as clj-queue]
-            [clj-lx.protocol :as q])
-  (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
+            [clj-lx.protocol :as q]
+            [clj-lx.helper :as test.helper]))
+(defn setup-db [f]
+  (test.helper/setup-database)
+  (f)
+  (test.helper/stop-database))
 
-;; the test datasource
-(def ^:dynamic *test-ds*)
-
-(defn with-pg [f]
-  (let [epg (.start (EmbeddedPostgres/builder))
-        ds  (.getPostgresDatabase epg)]
-    (jdbc/execute! ds [(slurp "resources/schema.sql")])
-    (binding [*test-ds* ds]
-      (f))
-    (.close epg)))
-
-(use-fixtures :once with-pg)
+(use-fixtures :once setup-db)
 
 (deftest test-listen-emits-notification
-  (testing "Listen emits a notification"
-    (let [notif-called? (atom false)
-          queue         (-> (clj-queue/new->PGQueue {:datasource *test-ds*
+  (testing "should notify subscriber once new message arrives"
+    (let [spy (atom {})
+          queue (-> (clj-queue/new->PGQueue {:datasource (test.helper/datasource)
+                                             :channel "jobs_status_channel"
+                                             :exception-handler (fn [e] (reset! spy (ex-data e)))
+                                             :polling-interval 500}) (q/start-queue))]
+
+     (q/subscribe queue (fn [job] (reset! spy job)))
+     (q/push queue nil)
+     @(future (Thread/sleep 2000)
+        (is @spy)
+        (q/stop-queue queue))))
+
+  (testing "should calls exception handler when subscriber blows up"
+    (let [spy (atom {})
+          queue         (-> (clj-queue/new->PGQueue {:datasource (test.helper/datasource)
                                                      :channel "jobs_status_channel"
+                                                     :exception-handler (fn [e] (reset! spy (ex-data e)))
                                                      :polling-interval 500})
-                            (q/start-queue))
-          _subscriber   (q/subscribe queue #(do
-                                             (println "[TEST] GOT NOTIFICATION" (java.util.Date.) %)
-                                             (reset! notif-called? true)))]
+                            (q/start-queue))]
+
+      (q/subscribe queue (fn [_job] (throw (ex-info "boom!" {:error :test-failed}))))
       (q/push queue nil)
-      @(future
-        (Thread/sleep 2000)
-        (println "Thread woke, is notif called?")
-        (is @notif-called?)))))
-
-
-(comment
-  (def db {:dbtype "postgresql" :dbname "cljlx"})
-  (def ds (jdbc/get-datasource db))
-
-  (def queue
-    (delay
-     (-> (clj-queue/new-queue ds "jobs_status_channel")
-         clj-queue/start
-         (clj-queue/listen #(println "GOT NOTIFICATION" (java.util.Date.) %)))))
-
-  (clj-queue/enqueue! @queue nil))
+      @(future (Thread/sleep 2000)
+         (is (= (:error @spy) :test-failed))
+         (q/stop-queue queue)))))
