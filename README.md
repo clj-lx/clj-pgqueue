@@ -6,21 +6,16 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
 ## Usage
 
-
-	(def db {:dbtype "postgresql" :dbname "cljlx"})
-	(def ds (jdbc/get-datasource db))
+	(def ds (jdbc/get-datasource {:dbtype "postgresql" :dbname "cljlx"}))
 
 	;; create a queue, but don't start yet
-	(def queue
-		(delay
-		 (-> (q/new-queue ds "jobs_status_channel")
-		     (q/start)
-		     (q/listen #(println "GOT NOTIFICATION" (java.util.Date.) %)))))
-    ;; start
-	@queue
+	(def queue (-> (q/new->PGQueue ds "jobs_status_channel") (protocol/start))
+	
+	(def subscriber-one (protocol/subsribe queue #(println "Subscriber #1" (java.util.Date.) %)))))
+	(def subscriber-two (protocol/subsribe queue #(println "Subscriber #2" (java.util.Date.) %)))))
     
-	;; put something there	
-	(q/enqueue! @queue nil))
+    ;; start
+	(protocol/push queue "payload-here"))
 
 ## License
 
