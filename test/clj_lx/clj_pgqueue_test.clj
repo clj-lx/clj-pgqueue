@@ -1,7 +1,8 @@
 (ns clj-lx.clj-pgqueue-test
   (:require [clojure.test :refer :all]
             [next.jdbc :as jdbc]
-            [clj-lx.clj-pgqueue :as clj-queue])
+            [clj-lx.clj-pgqueue :as clj-queue]
+            [clj-lx.protocol :as q])
   (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
 
 ;; the test datasource
@@ -20,13 +21,13 @@
 (deftest test-listen-emits-notification
   (testing "Listen emits a notification"
     (let [notif-called? (atom false)
-          queue         (-> (clj-queue/new-queue *test-ds* "jobs_status_channel")
-                            (clj-queue/start)
-                            (clj-queue/listen #(do
-                                                 (println "[TEST] GOT NOTIFICATION" (java.util.Date.) %)
-                                                 (reset! notif-called? true))))]
-      (clj-queue/enqueue! queue nil)
-      (println *test-ds*)
+          queue         (-> (clj-queue/new->PGQueue *test-ds* "jobs_status_channel" 1000)
+                            (q/start-queue))
+          _ (println ">>>>>>>>>>>>" queue)
+          subscrtiber   (q/subscribe queue #(do
+                                             (println "[TEST] GOT NOTIFICATION" (java.util.Date.) %)
+                                             (reset! notif-called? true)))]
+      (q/push queue nil)
       @(future
         (Thread/sleep 2000)
         (println "Thread woke, is notif called?")
