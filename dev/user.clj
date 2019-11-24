@@ -2,7 +2,8 @@
   (:require
    [next.jdbc :as jdbc]
    [kaocha.repl :as kaocha.repl]
-   [clj-lx.clj-pgqueue :as q])
+   [clj-lx.impl.pgqueue :as pgqueue]
+   [clj-lx.queue :as q])
   (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
 
 (def n "user")
@@ -10,19 +11,18 @@
   (kaocha.repl/run :unit))
 
 (comment
-  (let [epg (.start (EmbeddedPostgres/builder))]
-       ds  (.getPostgresDatabase epg)
-   (jdbc/execute! ds [(slurp "resources/schema.sql")]))
+  (def epg (.start (EmbeddedPostgres/builder)))
+  (def  ds  (.getPostgresDatabase epg))
 
-
-  (def db {:dbtype "postgresql" :dbname "cljlx"})
-  (def ds (jdbc/get-datasource db))
+  ;;setup tables and triggers
+  (jdbc/execute! ds [(slurp "resources/schema.sql")])
 
   (def queue
-    (delay
-     (-> (q/new-queue ds "jobs_status_channel")
-         (q/start)
-         (q/listen #(println "GOT NOTIFICATION" (java.util.Date.) %)))))
+     (-> (pgqueue/new->PGQueue {:datasource ds :channel "jobs_status_channel"})
+         (q/start)))
 
-  (q/enqueue! @queue nil))
+  (q/subscribe queue #(println "GOT NOTIFICATION" (java.util.Date.) %))
+  (q/push queue nil)
+
+  "end-comment-here")
 
