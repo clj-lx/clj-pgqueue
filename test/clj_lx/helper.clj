@@ -27,6 +27,12 @@
   (jdbc/execute-one! (datasource)
                      ["select * from jobs where id = ?" id]
                      {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
+
+(defn fetch-new-jobs []
+  (jdbc/execute! (datasource)
+                 ["select * from jobs where status = 'new'"]
+                 {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
+
 (defn setup-database []
   (start-database)
   (run-schema (database) "jobs"))
