@@ -10,7 +10,7 @@
                      {:return-keys true :builder-fn rs/as-unqualified-maps}))
 
 (defn- update-job-status [datasource status job-id]
-  (jdbc/execute! datasource ["UPDATE jobs SET status = ?::job_status WHERE id = ?" status job-id]))
+  (jdbc/execute! datasource ["UPDATE jobs SET status = ?::jobs_status WHERE id = ?" status job-id]))
 
 (defn- try-run-job! [datasource job subscriber-fn]
   (try

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: lambdaisland:tools.namespace:0.0-234">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/lambdaisland/tools.namespace/0.0-234/tools.namespace-0.0-234.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/lambdaisland/tools.namespace/0.0-234/tools.namespace-0.0-234-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/lambdaisland/tools.namespace/0.0-234/tools.namespace-0.0-234-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

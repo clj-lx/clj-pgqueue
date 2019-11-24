@@ -12,10 +12,13 @@
 
 (comment
   (def epg (.start (EmbeddedPostgres/builder)))
+  (println (.getConnectConfig epg))
   (def  ds  (.getPostgresDatabase epg))
 
+
+
   ;;setup tables and triggers
-  (jdbc/execute! ds [(slurp "resources/schema.sql")])
+  (jdbc/execute! ds [(slurp "resources/schema.sql.template")])
 
   (def queue
      (-> (pgqueue/new->PGQueue {:datasource ds :channel "jobs_status_channel"})
