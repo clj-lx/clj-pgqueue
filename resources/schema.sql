@@ -1,4 +1,4 @@
-CREATE TYPE job_status AS ENUM ('new', 'initializing', 'initialized', 'running', 'success', 'error');
+CREATE TYPE job_status AS ENUM ('new', 'running', 'success', 'error');
 
 CREATE TABLE jobs(
 	id SERIAL, 
@@ -22,8 +22,5 @@ CREATE TRIGGER jobs_status
 	AFTER INSERT OR UPDATE OF status
 	ON jobs
 	FOR EACH ROW
+	WHEN (NEW.status::text <> 'error')
 EXECUTE PROCEDURE jobs_status_notify();
-
-/*on API call*/
---INSERT INTO job_status(payload, status,created_at, updated_at) 
---VALUES ('\xDEADBEEF', 'new', NOW(), NOW());

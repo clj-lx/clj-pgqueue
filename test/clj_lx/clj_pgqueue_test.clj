@@ -15,25 +15,28 @@
     (let [spy (atom {})
           queue (-> (clj-queue/new->PGQueue {:datasource (test.helper/datasource)
                                              :channel "jobs_status_channel"
-                                             :exception-handler (fn [e] (reset! spy (ex-data e)))
                                              :polling-interval 500}) (q/start-queue))]
 
      (q/subscribe queue (fn [job] (reset! spy job)))
      (q/push queue nil)
      @(future (Thread/sleep 2000)
         (is @spy)
+        (is (= "success" (:status (test.helper/fetch-job (:id @spy)))))
         (q/stop-queue queue))))
 
-  (testing "should calls exception handler when subscriber blows up"
-    (let [spy (atom {})
-          queue         (-> (clj-queue/new->PGQueue {:datasource (test.helper/datasource)
-                                                     :channel "jobs_status_channel"
-                                                     :exception-handler (fn [e] (reset! spy (ex-data e)))
-                                                     :polling-interval 500})
-                            (q/start-queue))]
 
-      (q/subscribe queue (fn [_job] (throw (ex-info "boom!" {:error :test-failed}))))
+  (testing "should mark job with error status once exception appear on subscriber"
+    (let [queue         (-> (clj-queue/new->PGQueue {:datasource (test.helper/datasource)
+                                                     :channel "jobs_status_channel"
+                                                     :polling-interval 500})
+                            (q/start-queue))
+          job-id (atom nil)]
+      (q/subscribe queue (fn [job]
+                           (reset! job-id (:id job))
+                           (throw (ex-info "boom!" {:error :test-failed}))))
       (q/push queue nil)
-      @(future (Thread/sleep 2000)
-         (is (= (:error @spy) :test-failed))
-         (q/stop-queue queue)))))
+      @(future
+         (Thread/sleep 2000)
+         (let [job (test.helper/fetch-job @job-id)]
+           (is (= "error" (:status job)))
+           (q/stop-queue queue))))))

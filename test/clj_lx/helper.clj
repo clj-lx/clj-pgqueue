@@ -1,5 +1,6 @@
 (ns clj-lx.helper
-  (:require [next.jdbc :as jdbc])
+  (:require [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as rs])
   (:import (io.zonky.test.db.postgres.embedded EmbeddedPostgres)))
 
 (def db (atom nil))
@@ -15,13 +16,17 @@
   (.close (database)))
 
 (defn datasource
-  ([] (.getPostgresDatabase (database)))
+  ([] (datasource (database)))
   ([db] (.getPostgresDatabase db)))
 
 (defn run-schema [db]
   (jdbc/execute! (datasource db) [(slurp "resources/schema.sql")]))
 
+(defn fetch-job [id]
+  (jdbc/execute-one! (datasource)
+                     ["select * from jobs where id = ?" id]
+                     {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
 (defn setup-database []
-  (let [db (start-database)]
-    (run-schema db)))
+  (start-database)
+  (run-schema (database)))
 
