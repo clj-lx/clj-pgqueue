@@ -17,6 +17,7 @@
   :jar {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
         :main-opts ["-m" "hf.depstar.jar"]}
   
-  :test-runner
-  {:extra-paths ["test"]
-   :extra-deps  {lambdaisland/kaocha {:mvn/version "0.0-554"}}}}}
+  :test-runner {:extra-paths ["test"]
+                :extra-deps  {lambdaisland/kaocha {:mvn/version "0.0-554"}}}
+
+  :bootstrap {:main-opts ["-m" "clj-lx.bootstrap"]}}}

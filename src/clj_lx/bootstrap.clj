@@ -15,7 +15,9 @@
 (defn -main [& args]
   (let [table-name (or (first args) "jobs")
         jdbc-url (or (System/getenv "DATABASE_URL") (throw "missing DATABASE_URL"))]
-    (bootstrap table-name jdbc-url)))
+    (println "bootstraping, table-name:" table-name)
+    (bootstrap table-name jdbc-url)
+    (println"done !")))
 
 (comment
   (def jdbc-url "jdbc:postgresql://localhost:5432/db_name")

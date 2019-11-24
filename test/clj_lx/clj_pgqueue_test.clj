@@ -29,7 +29,6 @@
         (is (= "success" (:status (test.helper/fetch-job (:id @spy)))))
         (q/stop queue))))
 
-
   (testing "should mark job with error status once exception appear on subscriber"
     (let [queue (build-queue (test.helper/datasource))
           job-id (atom nil)]
@@ -42,7 +41,6 @@
          (let [job (test.helper/fetch-job @job-id)]
            (is (= "error" (:status job)))
            (q/stop queue)))))
-
 
 
   (testing "should claim for available jobs once a new subscriber is attached to que queue"
