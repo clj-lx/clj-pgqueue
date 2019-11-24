@@ -55,7 +55,7 @@
   (push [this payload] (push* this payload))
   (subscribe [this callback] (subscribe* this callback)))
 
-(defn new->PGQueue [{:keys [datasource channel exception-handler polling-interval]}]
+(defn new->PGQueue [{:keys [datasource channel polling-interval]}]
   (map->PGQueue {:datasource (or datasource (throw (ex-info "Datasource is required" {:error "datasource is required"})))
                  :channel    (or channel (throw (ex-info "Channel is required" {:error "channel is required"})))
                  :polling-interval  (or polling-interval 1000)}))
