@@ -6,17 +6,20 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
 ## Usage
 
-	(def ds (jdbc/get-datasource {:dbtype "postgresql" :dbname "cljlx"}))
-
-	;; create a queue, but don't start yet
-	(def queue (-> (q/new->PGQueue ds "jobs_status_channel") (protocol/start))
+	(require '[clj-pgqueue.queue :as q])
+	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
-	(def subscriber-one (protocol/subsribe queue #(println "Subscriber #1" (java.util.Date.) %)))))
-	(def subscriber-two (protocol/subsribe queue #(println "Subscriber #2" (java.util.Date.) %)))))
-    
-    ;; start
-	(protocol/push queue "payload-here"))
-
+	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource :channel "channel-name-here"}))
+	
+	(q/subscribe queue (fn [job] (println "process your job" job)
+	
+	(q/push queue "payload")
+	(q/push queue "another payload")
+	
+## TODO
+  - [] api to handle in parallel the notifications (q/subscribe queue fn {:parallel 3})
+  - [] retry/backoff strategy
+		
 ## License
 
 Copyright © 2019 FIXME

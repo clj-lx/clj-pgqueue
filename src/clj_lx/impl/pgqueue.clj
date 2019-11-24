@@ -1,4 +1,4 @@
-(ns clj-lx.clj-pgqueue
+(ns clj-lx.impl.pgqueue
   (:require [next.jdbc :as jdbc]
             [clj-lx.protocol :as q]
             [next.jdbc.result-set :as rs])
@@ -39,21 +39,21 @@
     ["INSERT INTO jobs(payload, status, created_at, updated_at) VALUES (?, 'new', NOW(), NOW());", payload]))
 
 (defn- subscribe* [{poll :polling-interval ds :datasource conn :connection}  callback]
- (future
-   (let [pgconn (.unwrap conn PGConnection)]
-     (loop []
-       (let [notifications (.getNotifications pgconn)]
-         (doseq [^org.postgresql.core.Notification _wakeup notifications]
-           (claim-and-run-job! ds callback)))
-       (Thread/sleep poll)
-       (recur)))))
+  (future
+    (let [pgconn (.unwrap conn PGConnection)]
+      (loop []
+        (let [notifications (.getNotifications pgconn)]
+          (doseq [^org.postgresql.core.Notification _wakeup notifications]
+            (claim-and-run-job! ds callback)))
+        (Thread/sleep poll)
+        (recur)))))
 
 (defrecord PGQueue [datasource channel]
   q/QueueProtocol
-  (start-queue [this] (start-queue* this))
-  (stop-queue [this] (stop-queue* this))
-  (push [this payload] (push* this payload))
-  (subscribe [this callback] (subscribe* this callback)))
+  (-start [this] (start-queue* this))
+  (-stop [this] (stop-queue* this))
+  (-push [this payload] (push* this payload))
+  (-subscribe [this callback] (subscribe* this callback)))
 
 (defn new->PGQueue [{:keys [datasource channel polling-interval]}]
   (map->PGQueue {:datasource (or datasource (throw (ex-info "Datasource is required" {:error "datasource is required"})))
