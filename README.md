@@ -22,6 +22,11 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	;; put something there	
 	(q/enqueue! @queue nil))
 
+## TODO
+
+- [x] use protocol based implementation (in branch `protocol-based-queue`)
+- [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism 
+
 ## License
 
 Copyright © 2019 FIXME
