@@ -40,9 +40,8 @@
   (future
     (let [pgconn (.unwrap conn PGConnection)]
       (loop []
-        (let [notifications (.getNotifications pgconn)]
-          (doseq [^org.postgresql.core.Notification _wakeup notifications]
-            (claim-and-run-job! queue callback)))
+          (doseq [^org.postgresql.core.Notification _wakeup (.getNotifications pgconn)]
+            (claim-and-run-job! queue callback))
         (Thread/sleep poll)
         (recur)))))
 
