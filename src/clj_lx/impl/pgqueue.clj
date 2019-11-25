@@ -4,25 +4,25 @@
             [next.jdbc.result-set :as rs])
   (:import [org.postgresql PGConnection]))
 
-(defn- fetch-available-job [datasource]
+(defn- fetch-available-job [{:keys [datasource table-name]}]
   (jdbc/execute-one! datasource
-                     ["UPDATE jobs SET status='running' WHERE id = (SELECT id FROM jobs WHERE status='new' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *;"]
+                     [(str "UPDATE " table-name " SET status='running' WHERE id = (SELECT id FROM " table-name " WHERE status='new' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING *;")]
                      {:return-keys true :builder-fn rs/as-unqualified-maps}))
 
-(defn- update-job-status [datasource status job-id]
-  (jdbc/execute! datasource ["UPDATE jobs SET status = ?::jobs_status WHERE id = ?" status job-id]))
+(defn- update-job-status [{:keys [datasource table-name]} status job-id]
+  (jdbc/execute! datasource [(str "UPDATE " table-name " SET status = ?::jobs_status WHERE id = ?") status job-id]))
 
-(defn- try-run-job! [datasource job subscriber-fn]
+(defn- try-run-job! [queue job subscriber-fn]
   (try
     (subscriber-fn job)
-    (update-job-status datasource "success" (:id job))
+    (update-job-status queue "success" (:id job))
     (catch Exception e
-      (update-job-status datasource "error" (:id job)))))
+      (update-job-status queue "error" (:id job)))))
 
-(defn- claim-and-run-job! [datasource fn]
-  (let [job (fetch-available-job datasource)]
+(defn- claim-and-run-job! [queue fn]
+  (let [job (fetch-available-job queue)]
     (when job
-      (try-run-job! datasource job fn))))
+      (try-run-job! queue job fn))))
 
 (defn- start-queue* [{:keys [datasource channel] :as queue}]
   (let [conn   (.getConnection datasource)
@@ -33,18 +33,18 @@
   (when connection
     (.close connection)))
 
-(defn- push* [{:keys [datasource] } ^bytes payload]
+(defn- push* [{:keys [datasource table-name] } ^bytes payload]
   (jdbc/execute!
     datasource
-    ["INSERT INTO jobs(payload, status, created_at, updated_at) VALUES (?, 'new', NOW(), NOW());", payload]))
+    [(str "INSERT INTO " table-name " (payload, status, created_at, updated_at) VALUES (?, 'new', NOW(), NOW());") payload]))
 
-(defn- subscribe* [{poll :polling-interval ds :datasource conn :connection}  callback]
+(defn- subscribe* [{poll :polling-interval conn :connection :as queue}  callback]
   (future
     (let [pgconn (.unwrap conn PGConnection)]
       (loop []
         (let [notifications (.getNotifications pgconn)]
           (doseq [^org.postgresql.core.Notification _wakeup notifications]
-            (claim-and-run-job! ds callback)))
+            (claim-and-run-job! queue callback)))
         (Thread/sleep poll)
         (recur)))))
 
