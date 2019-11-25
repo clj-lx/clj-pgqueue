@@ -12,6 +12,11 @@
 (defn- update-job-status [{:keys [datasource table-name]} status job-id]
   (jdbc/execute! datasource [(str "UPDATE " table-name " SET status = ?::jobs_status WHERE id = ?") status job-id]))
 
+(defn- push* [{:keys [datasource table-name] } ^bytes payload]
+  (jdbc/execute!
+    datasource
+    [(str "INSERT INTO " table-name " (payload, status, created_at, updated_at) VALUES (?, 'new', NOW(), NOW());") payload]))
+
 (defn- try-run-job! [queue job subscriber-fn]
   (try
     (subscriber-fn job)
@@ -20,9 +25,8 @@
       (update-job-status queue "error" (:id job)))))
 
 (defn- claim-and-run-job! [queue fn]
-  (let [job (fetch-available-job queue)]
-    (when job
-      (try-run-job! queue job fn))))
+  (when-let [job (fetch-available-job queue)]
+    (try-run-job! queue job fn)))
 
 (defn- start-queue* [{:keys [datasource channel] :as queue}]
   (let [conn   (.getConnection datasource)
@@ -30,13 +34,7 @@
     (assoc queue :connection conn)))
 
 (defn- stop-queue* [{:keys [connection]}]
-  (when connection
-    (.close connection)))
-
-(defn- push* [{:keys [datasource table-name] } ^bytes payload]
-  (jdbc/execute!
-    datasource
-    [(str "INSERT INTO " table-name " (payload, status, created_at, updated_at) VALUES (?, 'new', NOW(), NOW());") payload]))
+  (when connection (.close connection)))
 
 (defn- subscribe* [{poll :polling-interval conn :connection :as queue}  callback]
   (future
