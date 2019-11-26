@@ -27,10 +27,15 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(q/push queue "payload")
 	(q/push queue "another payload")
 	
-## TODO
-  - [] api to handle notifications in parallel (q/subscribe queue fn {:parallel 3})
-  - [] retry/backoff strategy
+
 		
+## TODO
+
+- [x] use protocol based implementation (in branch `protocol-based-queue`)
+- [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism
+- [ ] api to handle notifications in parallel (q/subscribe queue fn {:parallel 3})
+- [ ] retry/backoff strategy
+
 ## License
 
 Copyright © 2019 FIXME
