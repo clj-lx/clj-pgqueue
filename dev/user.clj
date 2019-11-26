@@ -11,16 +11,16 @@
   (kaocha.repl/run :unit))
 
 (comment
-  (def epg (.start (EmbeddedPostgres/builder)))
-  #_(def  ds  (.getPostgresDatabase epg))
+  #_(def epg (.start (EmbeddedPostgres/builder)))
+  #_(def ds (.getPostgresDatabase epg))
   (def ds (jdbc/get-datasource {:dbtype "postgres" :dbname "mping"}))
   
   ;;setup tables and triggers
   (jdbc/execute! ds [(bootstrap/build-ddl "jobs")])
 
   (def queue
-     (-> (pgqueue/new->PGQueue {:datasource ds :channel "jobs_channel"})
-         (q/start)))
+    (-> (pgqueue/new->PGQueue {:datasource ds})
+        (q/start)))
 
   (q/subscribe queue #(println "GOT NOTIFICATION" (java.util.Date.) %))
   (q/push queue nil)

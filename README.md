@@ -6,20 +6,21 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
 ## How
 
-- There's a `jobs` table
+- There's a `jobs` table (the table name is configurable)
  - a trigger fires on `insert` and `update`, calling a function
  - a function calls `pg_notify(channel, jobid)`
  
 - On the sql client:
  - a thread is polling the channel through the connection's `getNotifications` method
  - when a notification arrives, subscribers are notified
+  - the subscriber function is run within a transaction
 
 ## Usage
 
 	(require '[clj-pgqueue.queue :as q])
 	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
-	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource :channel "channel-name-here"}))
+	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource :table-name "jobs"}))
 	
 	(q/subscribe queue (fn [job] (println "process your job" job)
 	
@@ -27,7 +28,7 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(q/push queue "another payload")
 	
 ## TODO
-  - [] api to handle in parallel the notifications (q/subscribe queue fn {:parallel 3})
+  - [] api to handle notifications in parallel (q/subscribe queue fn {:parallel 3})
   - [] retry/backoff strategy
 		
 ## License

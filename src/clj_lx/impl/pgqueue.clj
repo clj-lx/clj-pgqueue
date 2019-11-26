@@ -44,7 +44,7 @@
 (defn- stop-queue* [{:keys [connection]}]
   (when connection (.close connection)))
 
-(defn- subscribe* [{poll :polling-interval conn :connection :as queue}  callback]
+(defn- subscribe* [{poll :polling-interval conn :connection :as queue} callback]
   (future
     (let [pgconn (.unwrap conn PGConnection)]
       (loop []
@@ -60,10 +60,9 @@
   (-push [this payload] (push* this payload))
   (-subscribe [this callback] (subscribe* this callback)))
 
-(defn new->PGQueue [{:keys [datasource channel polling-interval table-name]}]
+(defn new->PGQueue [{:keys [datasource polling-interval table-name] :or {polling-interval 1000 table-name "jobs"} :as args}]
   (map->PGQueue {:datasource       (or datasource
-                                       (throw (ex-info "Datasource is required" {:error "datasource is required"})))
-                 :channel          (or channel
-                                       (throw (ex-info "Channel is required" {:error "channel is required"})))
-                 :table-name       (or table-name "jobs")
-                 :polling-interval (or polling-interval 1000)}))
+                                       (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
+                 :channel          (str table-name "_channel")
+                 :table-name       table-name
+                 :polling-interval polling-interval}))

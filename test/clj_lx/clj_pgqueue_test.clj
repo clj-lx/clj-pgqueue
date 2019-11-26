@@ -12,10 +12,9 @@
 (use-fixtures :once setup-db)
 
 (defn build-queue [datasource]
- (-> (pgqueue/new->PGQueue {:datasource datasource
-                            :channel "jobs_channel"
-                            :table-name "jobs"
-                            :polling-interval 100})
+  (-> (pgqueue/new->PGQueue {:datasource       datasource
+                             :table-name       "jobs"
+                             :polling-interval 100})
      (q/start)))
 
 (deftest test-listen-emits-notification
