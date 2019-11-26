@@ -1,46 +1,60 @@
 (ns clj-lx.clj-pgqueue-test
   (:require [clojure.test :refer :all]
-            [next.jdbc :as jdbc]
-            [clj-lx.clj-pgqueue :as clj-queue])
-  (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
+            [clj-lx.impl.pgqueue :as pgqueue]
+            [clj-lx.queue :as q]
+            [clj-lx.helper :as test.helper]))
 
-;; the test datasource
-(def ^:dynamic *test-ds*)
+(defn setup-db [f]
+  (test.helper/setup-database)
+  (f)
+  (test.helper/stop-database))
 
-(defn with-pg [f]
-  (let [epg (.start (EmbeddedPostgres/builder))
-        ds  (.getPostgresDatabase epg)]
-    (jdbc/execute! ds [(slurp "resources/schema.sql")])
-    (binding [*test-ds* ds]
-      (f))
-    (.close epg)))
+(use-fixtures :once setup-db)
 
-(use-fixtures :once with-pg)
+(defn build-queue [datasource]
+  (-> (pgqueue/new->PGQueue {:datasource       datasource
+                             :table-name       "jobs"
+                             :polling-interval 100})
+     (q/start)))
 
 (deftest test-listen-emits-notification
-  (testing "Listen emits a notification"
-    (let [notif-called? (atom false)
-          queue         (-> (clj-queue/new-queue *test-ds* "jobs_status_channel")
-                            (clj-queue/start)
-                            (clj-queue/listen #(do
-                                                 (println "[TEST] GOT NOTIFICATION" (java.util.Date.) %)
-                                                 (reset! notif-called? true))))]
-      (clj-queue/enqueue! queue nil)
-      (println *test-ds*)
+  (testing "should notify subscriber once new message arrives"
+    (let [queue (build-queue (test.helper/datasource))
+          spy (atom {})]
+
+     (q/subscribe queue (fn [job] (reset! spy job)))
+     (q/push queue nil)
+     @(future (Thread/sleep 500)
+        (is @spy)
+        (is (= "success" (:status (test.helper/fetch-job (:id @spy)))))
+        (q/stop queue))))
+
+  (testing "should mark job with error status once exception appear on subscriber"
+    (let [queue (build-queue (test.helper/datasource))
+          job-id (atom nil)]
+      (q/subscribe queue (fn [job]
+                           (reset! job-id (:id job))
+                           (throw (ex-info "boom!" {:error :test-failed}))))
+      (q/push queue nil)
       @(future
-        (Thread/sleep 2000)
-        (println "Thread woke, is notif called?")
-        (is @notif-called?)))))
+         (Thread/sleep 500)
+         (let [job (test.helper/fetch-job @job-id)]
+           (is (= "error" (:status job)))
+           (q/stop queue)))))
 
 
-(comment
-  (def db {:dbtype "postgresql" :dbname "cljlx"})
-  (def ds (jdbc/get-datasource db))
+  (testing "should claim for available jobs once a new subscriber is attached to que queue"
+    (let [queue (build-queue (test.helper/datasource))
+          job-id (atom nil)]
 
-  (def queue
-    (delay
-     (-> (clj-queue/new-queue ds "jobs_status_channel")
-         clj-queue/start
-         (clj-queue/listen #(println "GOT NOTIFICATION" (java.util.Date.) %)))))
+      (is (zero? (count (test.helper/fetch-new-jobs))))
+      (q/push queue nil) ;; push payload before any subscriber attached
+      (is (= 1 (count (test.helper/fetch-new-jobs))))
 
-  (clj-queue/enqueue! @queue nil))
+      (q/subscribe queue (fn [job] (reset! job-id (:id job))))
+
+      @(future
+         (Thread/sleep 500)
+         (let [job (test.helper/fetch-job @job-id)]
+           (is (= "success" (:status job)))
+           (q/stop queue))))))

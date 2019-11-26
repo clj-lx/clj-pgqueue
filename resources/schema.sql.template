@@ -1,0 +1,16 @@
+CREATE TYPE :table-name_status AS ENUM ('new', 'running', 'success', 'error');
+CREATE TABLE :table-name (id SERIAL, payload bytea, status :table-name_status, created_at timestamp, updated_at timestamp);
+
+CREATE OR REPLACE FUNCTION :table-name_channel_notify() RETURNS trigger AS $$
+    BEGIN
+        PERFORM pg_notify(':table-name_channel', NEW.id::text);
+        RETURN NEW;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER :table-name_notify_trigger
+    AFTER INSERT OR UPDATE OF status
+        ON :table-name
+        FOR EACH ROW
+        WHEN (NEW.status::text <> 'error')
+EXECUTE PROCEDURE :table-name_channel_notify();

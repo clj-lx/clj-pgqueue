@@ -4,28 +4,37 @@
 A Clojure library designed to use Postgres as a queue storage.
 Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
+## How
+
+- There's a `jobs` table (the table name is configurable)
+ - a trigger fires on `insert` and `update`, calling a function
+ - a function calls `pg_notify(channel, jobid)`
+ 
+- On the sql client:
+ - a thread is polling the channel through the connection's `getNotifications` method
+ - when a notification arrives, subscribers are notified
+  - the subscriber function is run within a transaction
+
 ## Usage
 
+	(require '[clj-pgqueue.queue :as q])
+	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
+	
+	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource :table-name "jobs"}))
+	
+	(q/subscribe queue (fn [job] (println "process your job" job)
+	
+	(q/push queue "payload")
+	(q/push queue "another payload")
+	
 
-	(def db {:dbtype "postgresql" :dbname "cljlx"})
-	(def ds (jdbc/get-datasource db))
-
-	;; create a queue, but don't start yet
-	(def queue
-		(delay
-		 (-> (q/new-queue ds "jobs_status_channel")
-		     (q/start)
-		     (q/listen #(println "GOT NOTIFICATION" (java.util.Date.) %)))))
-    ;; start
-	@queue
-    
-	;; put something there	
-	(q/enqueue! @queue nil))
-
+		
 ## TODO
 
 - [x] use protocol based implementation (in branch `protocol-based-queue`)
-- [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism 
+- [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism
+- [ ] api to handle notifications in parallel (q/subscribe queue fn {:parallel 3})
+- [ ] retry/backoff strategy
 
 ## License
 
