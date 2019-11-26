@@ -14,7 +14,8 @@
 
 (defn -main [& args]
   (let [table-name (or (first args) "jobs")
-        jdbc-url (or (System/getenv "DATABASE_URL") (throw "missing DATABASE_URL"))]
+        jdbc-url   (or (System/getenv "DATABASE_URL")
+                       (throw "missing DATABASE_URL"))]
     (println "bootstraping, table-name:" table-name)
     (bootstrap table-name jdbc-url)
     (println"done !")))
