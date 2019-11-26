@@ -13,7 +13,6 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 - On the sql client:
  - a thread is polling the channel through the connection's `getNotifications` method
  - when a notification arrives, subscribers are notified
-  - the subscriber function is run within a transaction
 
 ## Usage
 
@@ -55,6 +54,11 @@ your option) any later version.
 ## Cider
 
 	clj -A:cider-clj:dev:test
+	
+## nRepl
+
+   	clj-A:nrepl:dev
+	
     
     
 ## Run tests from repl
