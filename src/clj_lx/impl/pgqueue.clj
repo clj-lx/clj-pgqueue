@@ -4,13 +4,16 @@
             [next.jdbc.result-set :as rs])
   (:import [org.postgresql PGConnection]))
 
-(defn- fetch-available-job [{:keys [datasource table-name]}]
+(defn- fetch-available-job [{:keys [datasource table-name queue-name]}]
   (jdbc/execute-one!
    datasource
    [(str "UPDATE " table-name
          " SET status='running' WHERE id ="
-         "(SELECT id FROM " table-name " WHERE status='new' ORDER BY created_at asc, id asc FOR UPDATE SKIP LOCKED LIMIT 1)"
-         "RETURNING *;")]
+         " (SELECT id FROM " table-name
+          " WHERE status='new'"
+          " AND queue_name = ?"
+          " ORDER BY created_at asc, id asc FOR UPDATE SKIP LOCKED LIMIT 1)"
+         "RETURNING *;") queue-name]
    {:return-keys true :builder-fn rs/as-unqualified-maps}))
 
 (defn- update-job-status [{:keys [datasource table-name]} status job-id]
@@ -18,11 +21,12 @@
    datasource
    [(str "UPDATE " table-name " SET status = ?::jobs_status WHERE id = ?") status job-id]))
 
-(defn- push* [{:keys [datasource table-name] } ^bytes payload]
+(defn- push* [{:keys [datasource table-name queue-name]}  ^bytes payload]
   (jdbc/execute!
     datasource
     [(str "INSERT INTO " table-name
-          " (payload, status, created_at, updated_at) VALUES (?, 'new', NOW(), NOW());")
+          " (queue_name, payload, status, created_at, updated_at) VALUES (?, ?, 'new', NOW(), NOW());")
+     queue-name
      payload]))
 
 (defn- try-run-job! [queue job subscriber-fn]
@@ -60,9 +64,13 @@
   (-push [this payload] (push* this payload))
   (-subscribe [this callback] (subscribe* this callback)))
 
-(defn new->PGQueue [{:keys [datasource polling-interval table-name] :or {polling-interval 1000 table-name "jobs"} :as args}]
+(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name]
+                     :or { queue-name "default"
+                           polling-interval 1000
+                           table-name "jobs"} :as args}]
   (map->PGQueue {:datasource       (or datasource
                                        (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
                  :channel          (str table-name "_channel")
                  :table-name       table-name
+                 :queue-name       queue-name
                  :polling-interval polling-interval}))
