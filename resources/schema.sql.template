@@ -14,3 +14,6 @@ CREATE TRIGGER :table-name_notify_trigger
         FOR EACH ROW
         WHEN (NEW.status::text <> 'error')
 EXECUTE PROCEDURE :table-name_channel_notify();
+
+CREATE INDEX :table-name_claim_idx ON :table-name (status, queue_name)
+    WHERE (status = 'new');

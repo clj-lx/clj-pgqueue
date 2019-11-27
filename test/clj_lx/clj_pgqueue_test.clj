@@ -114,7 +114,6 @@
 
       (q/push campaign-queue (.getBytes "campaign #1"))
 
-
       @(future
          (Thread/sleep 800)
          (is (= ["invoicing #1" "invoicing #2" "invoicing #3"] @invoicing-spy))
