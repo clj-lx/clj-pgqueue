@@ -51,7 +51,9 @@
       (test.helper/insert-job (.getBytes "payload")) ;; insert payload before any subscriber attached
       (is (= 1 (count (test.helper/fetch-new-jobs))))
 
-      (q/subscribe queue (fn [job] (reset! job-id (:id job))))
+      (q/subscribe queue (fn [job]
+                           (is (= "running" (:status job)))
+                           (reset! job-id (:id job))))
 
       @(future
          (Thread/sleep 500)
