@@ -16,6 +16,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
 ## Usage
 
+#### single queue usage
+
 	(require '[clj-pgqueue.queue :as q])
 	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
@@ -26,6 +28,29 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(q/push queue "payload")
 	(q/push queue "another payload")
 	
+#### multiple queue usage	
+
+You can specify **queue name** 
+
+```
+(require '[clj-pgqueue.queue :as q])
+(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
+
+(def mail-queue (q/start (pgqueue/new->PGQueue {:queue-name "mail-queue"
+                                                :datasource datasource 
+                                                :table-name "jobs"}))
+
+(def invoicing-queue (q/start (pgqueue/new->PGQueue {:queue-name "invoicing-queue" 
+                                                     :datasource datasource 
+                                                     :table-name "jobs"}))
+
+(q/subscribe mail-queue (fn [job] (println "sending email" job)
+(q/subscribe invoicing-queue (fn [job] (println "creating invoice" job)
+
+(q/push invoicing-queue (.getBytes "invoice n#1"))
+(q/push mail-queue (.getBytes "confirmation email"))
+
+```
 
 		
 ## TODO
