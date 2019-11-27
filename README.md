@@ -21,7 +21,7 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(require '[clj-pgqueue.queue :as q])
 	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
-	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource :table-name "jobs"}))
+	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource }))
 	
 	(q/subscribe queue (fn [job] (println "process your job" job)
 	
@@ -37,8 +37,7 @@ You can specify **queue name**
 (require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 
 (def mail-queue (q/start (pgqueue/new->PGQueue {:queue-name "mail-queue"
-                                                :datasource datasource 
-                                                :table-name "jobs"}))
+                                                :datasource datasource }))
 
 (def invoicing-queue (q/start (pgqueue/new->PGQueue {:queue-name "invoicing-queue" 
                                                      :datasource datasource 
