@@ -48,7 +48,7 @@
           job-id (atom nil)]
 
       (is (zero? (count (test.helper/fetch-new-jobs))))
-      (q/push queue nil) ;; push payload before any subscriber attached
+      (test.helper/insert-job nil) ;; push payload before any subscriber attached
       (is (= 1 (count (test.helper/fetch-new-jobs))))
 
       (q/subscribe queue (fn [job] (reset! job-id (:id job))))

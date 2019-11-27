@@ -38,11 +38,15 @@
                      ["SELECT * FROM information_schema.triggers where trigger_name = ?" trigger-name]
                      {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
 
-
 (defn fetch-job [id]
   (jdbc/execute-one! (datasource)
                      ["select * from jobs where id = ?" id]
                      {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
+
+(defn insert-job [payload]
+  (jdbc/execute-one!
+    (datasource)
+    ["insert into jobs (payload, status, created_at, updated_at) values (?,?::jobs_status,NOW(),NOW())" payload "new"]))
 
 (defn fetch-new-jobs []
   (jdbc/execute! (datasource)
