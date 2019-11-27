@@ -43,10 +43,13 @@
                      ["select * from jobs where id = ?" id]
                      {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
 
-(defn insert-job [payload]
-  (jdbc/execute-one!
-    (datasource)
-    ["insert into jobs (payload, status, created_at, updated_at) values (?,?::jobs_status,NOW(),NOW())" payload "new"]))
+(defn insert-job
+  ([payload] (insert-job payload 0))
+  ([payload diff-created-at]
+   (let [created-at (str "now() + interval '" diff-created-at " day'")]
+     (jdbc/execute-one!
+       (datasource)
+       [(str "insert into jobs (payload, status, created_at, updated_at) values (?,'new', " created-at " ,now())") payload]))))
 
 (defn fetch-new-jobs []
   (jdbc/execute! (datasource)

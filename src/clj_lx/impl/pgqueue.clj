@@ -9,7 +9,7 @@
    datasource
    [(str "UPDATE " table-name
          " SET status='running' WHERE id ="
-         "(SELECT id FROM " table-name " WHERE status='new' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1)"
+         "(SELECT id FROM " table-name " WHERE status='new' ORDER BY created_at asc FOR UPDATE SKIP LOCKED LIMIT 1)"
          "RETURNING *;")]
    {:return-keys true :builder-fn rs/as-unqualified-maps}))
 

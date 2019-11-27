@@ -43,15 +43,31 @@
            (q/stop queue)))))
 
 
+
   (testing "should claim for available jobs once a new subscriber is attached to que queue"
+      (let [queue (build-queue (test.helper/datasource))
+            job-id (atom nil)]
+
+        (is (zero? (count (test.helper/fetch-new-jobs))))
+        (test.helper/insert-job (.getBytes "payload")) ;; insert payload before any subscriber attached
+        (is (= 1 (count (test.helper/fetch-new-jobs))))
+
+        (q/subscribe queue (fn [job] (reset! job-id (:id job))))
+
+        @(future
+           (Thread/sleep 500)
+           (let [job (test.helper/fetch-job @job-id)]
+             (is (= "success" (:status job)))
+             (q/stop queue)))))
+
+
+  (testing "should update job status to running while subscriber is processing"
     (let [queue (build-queue (test.helper/datasource))
           job-id (atom nil)]
 
-      (is (zero? (count (test.helper/fetch-new-jobs))))
-      (test.helper/insert-job (.getBytes "payload")) ;; insert payload before any subscriber attached
-      (is (= 1 (count (test.helper/fetch-new-jobs))))
-
+      (q/push queue (.getBytes "payload"))
       (q/subscribe queue (fn [job]
+                           (is (= "payload" (String. (:payload job))))
                            (is (= "running" (:status job)))
                            (reset! job-id (:id job))))
 
@@ -59,4 +75,25 @@
          (Thread/sleep 500)
          (let [job (test.helper/fetch-job @job-id)]
            (is (= "success" (:status job)))
-           (q/stop queue))))))
+           (q/stop queue)))))
+
+  (testing "should respect insertion order when fetching new jobs"
+    (let [queue (build-queue (test.helper/datasource))
+          spy (atom [])]
+
+      (test.helper/insert-job (.getBytes "payload #3") 0)
+      (test.helper/insert-job (.getBytes "payload #1") -2)
+      (test.helper/insert-job (.getBytes "payload #2") -1)
+
+      (println (test.helper/fetch-new-jobs))
+      ;; insert payload before any subscriber attached
+      (is (= 3 (count (test.helper/fetch-new-jobs))))
+
+      (q/subscribe queue (fn [job] (swap! spy conj (String. (:payload job)))))
+      (q/push queue (.getBytes "payload #4"))
+
+      @(future
+         (Thread/sleep 800)
+         (is (= ["payload #1" "payload #2" "payload #3" "payload #4"] @spy))
+         (q/stop queue)))))
+
