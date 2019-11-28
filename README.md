@@ -16,6 +16,11 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
 ## Usage
 
+#### bootstrap
+
+	(require '[clj-pgqueue.bootstrap :as b])
+	(b/bootstrap "jobs" "jdbc:postgresql://localhost:5432/dbname")
+
 #### single queue usage
 
 	(require '[clj-pgqueue.queue :as q])
