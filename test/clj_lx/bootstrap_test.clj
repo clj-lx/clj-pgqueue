@@ -12,19 +12,7 @@
 
 (deftest test-boostrap
   (testing "should create table with given name"
-    (let [jdbc-url (.getJdbcUrl @test.helper/db "postgres" "postgres")
+    (let [jdbc-url   (.getJdbcUrl @test.helper/db "postgres" "postgres")
           table-name "lisbon_table"]
       (bootstrap/bootstrap table-name jdbc-url)
-      (is (test.helper/list-tables table-name))))
-
-  (testing "should create function name"
-    (let [jdbc-url (.getJdbcUrl @test.helper/db "postgres" "postgres")
-          table-name "another_table"]
-      (bootstrap/bootstrap table-name jdbc-url)
-      (is (test.helper/list-functions (str table-name "_channel_notify")))))
-
-  (testing "should create trigger name"
-    (let [jdbc-url (.getJdbcUrl @test.helper/db "postgres" "postgres")
-          table-name "again_another_table"]
-      (bootstrap/bootstrap table-name jdbc-url)
-      (is (test.helper/list-triggers (str table-name "_notify_trigger"))))))
+      (is (test.helper/list-tables table-name)))))

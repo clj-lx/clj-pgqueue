@@ -1,8 +1,7 @@
 (ns clj-lx.impl.pgqueue
   (:require [next.jdbc :as jdbc]
             [clj-lx.protocol :as q]
-            [next.jdbc.result-set :as rs])
-  (:import [org.postgresql PGConnection]))
+            [next.jdbc.result-set :as rs]))
 
 (defn- fetch-available-job [{:keys [datasource table-name queue-name]}]
   (jdbc/execute-one!
@@ -21,7 +20,7 @@
    datasource
    [(str "UPDATE " table-name " SET status = ?::jobs_status WHERE id = ?") status job-id]))
 
-(defn- push* [{:keys [datasource table-name queue-name]}  ^bytes payload]
+(defn- push* [{:keys [datasource table-name queue-name]} ^bytes payload]
   (jdbc/execute!
     datasource
     [(str "INSERT INTO " table-name
@@ -37,25 +36,24 @@
       (update-job-status queue "error" (:id job)))))
 
 (defn- claim-and-run-job! [queue fn]
-  (when-let [job (fetch-available-job queue)]
-    (try-run-job! queue job fn)))
+  (loop []
+      (when-let [job (fetch-available-job queue)]
+        (try-run-job! queue job fn)
+        (recur))))
 
 (defn- start-queue* [{:keys [datasource channel] :as queue}]
-  (let [conn (.getConnection datasource)
-        _rs  (jdbc/execute! conn [(str "LISTEN " channel)])]
+  (let [conn (.getConnection datasource)]
     (assoc queue :connection conn)))
 
 (defn- stop-queue* [{:keys [connection]}]
   (when connection (.close connection)))
 
-(defn- subscribe* [{poll :polling-interval conn :connection :as queue} callback]
+(defn- subscribe* [{poll :polling-interval :as queue} callback]
   (future
-    (let [pgconn (.unwrap conn PGConnection)]
-      (loop []
-        (doseq [^org.postgresql.core.Notification _notif (.getNotifications pgconn)]
-          (claim-and-run-job! queue callback))
-        (Thread/sleep poll)
-        (recur)))))
+    (loop []
+      (claim-and-run-job! queue callback)
+      (Thread/sleep poll)
+      (recur))))
 
 (defrecord PGQueue [datasource channel]
   q/QueueProtocol

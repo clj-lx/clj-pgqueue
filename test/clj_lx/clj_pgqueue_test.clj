@@ -18,17 +18,18 @@
 (deftest test-listen-emits-notification
   (testing "should notify subscriber once new message arrives"
     (let [queue (build-queue {:datasource (test.helper/datasource)})
-          spy (atom {})]
+          spy   (atom {})]
 
      (q/subscribe queue (fn [job] (reset! spy job)))
      (q/push queue nil)
-     @(future (Thread/sleep 500)
+     @(future (Thread/sleep 2000)
         (is @spy)
         (is (= "success" (:status (test.helper/fetch-job (:id @spy)))))
-        (q/stop queue))))
+        (q/stop queue)))))
 
+(deftest test-exception-marks-error-status
   (testing "should mark job with error status once exception appear on subscriber"
-    (let [queue (build-queue {:datasource (test.helper/datasource)})
+    (let [queue  (build-queue {:datasource (test.helper/datasource)})
           job-id (atom nil)]
       (q/subscribe queue (fn [job]
                            (reset! job-id (:id job))
@@ -38,13 +39,13 @@
          (Thread/sleep 500)
          (let [job (test.helper/fetch-job @job-id)]
            (is (= "error" (:status job)))
-           (q/stop queue)))))
+           (q/stop queue))))))
 
 
-
+(deftest test-subscribe-behaviour
   (testing "should claim for available jobs once a new subscriber is attached to que queue"
-    (let [queue (build-queue {:datasource (test.helper/datasource)})
-            job-id (atom nil)]
+    (let [queue  (build-queue {:datasource (test.helper/datasource)})
+          job-id (atom nil)]
 
         (is (zero? (count (test.helper/fetch-new-jobs))))
         (test.helper/insert-job (.getBytes "payload")) ;; insert payload before any subscriber attached
@@ -56,9 +57,9 @@
            (Thread/sleep 500)
            (let [job (test.helper/fetch-job @job-id)]
              (is (= "success" (:status job)))
-             (q/stop queue)))))
+             (q/stop queue))))))
 
-
+(deftest test-subscribe-process
   (testing "should update job status to running while subscriber is processing"
     (let [queue (build-queue {:datasource (test.helper/datasource)})
           job-id (atom nil)]
@@ -73,9 +74,10 @@
          (Thread/sleep 500)
          (let [job (test.helper/fetch-job @job-id)]
            (is (= "success" (:status job)))
-           (q/stop queue)))))
+           (q/stop queue))))))
 
-  (testing "should respect insertion order when fetching new jobs"
+#_(deftest test-ordered-payload
+   (testing "should respect insertion order when fetching new jobs"
     (let [queue (build-queue {:datasource (test.helper/datasource)})
           spy (atom [])]
 
@@ -93,8 +95,9 @@
       @(future
          (Thread/sleep 800)
          (is (= ["payload #1" "payload #2" "payload #3" "payload #4"] @spy))
-         (q/stop queue))))
+         (q/stop queue)))))
 
+(deftest test-multiple-queues
   (testing "should support multiple queues"
     (let [invoicing-queue (build-queue {:queue-name "invoicing-queue" :datasource (test.helper/datasource)})
           campaign-queue  (build-queue {:queue-name "campaign-queue" :datasource (test.helper/datasource)})
