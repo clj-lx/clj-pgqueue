@@ -36,7 +36,7 @@
                            (throw (ex-info "boom!" {:error :test-failed}))))
       (q/push queue nil)
       @(future
-         (Thread/sleep 500)
+         (Thread/sleep 1000)
          (let [job (test.helper/fetch-job @job-id)]
            (is (= "error" (:status job)))
            (q/stop queue))))))
@@ -54,7 +54,7 @@
         (q/subscribe queue (fn [job] (reset! job-id (:id job))))
 
         @(future
-           (Thread/sleep 500)
+           (Thread/sleep 1000)
            (let [job (test.helper/fetch-job @job-id)]
              (is (= "success" (:status job)))
              (q/stop queue))))))
