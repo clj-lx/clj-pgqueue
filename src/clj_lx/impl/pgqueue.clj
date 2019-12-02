@@ -36,10 +36,8 @@
       (update-job-status queue "error" (:id job)))))
 
 (defn- claim-and-run-job! [queue fn]
-  (loop []
-      (when-let [job (fetch-available-job queue)]
-        (try-run-job! queue job fn)
-        (recur))))
+  (when-let [job (fetch-available-job queue)]
+    (try-run-job! queue job fn)))
 
 (defn- start-queue* [{:keys [datasource channel] :as queue}]
   (let [conn (.getConnection datasource)]
