@@ -12,17 +12,17 @@
 (use-fixtures :once setup-db)
 
 (defn build-queue [queue-opts]
-   (-> (pgqueue/new->PGQueue (merge {:table-name "jobs" :polling-interval 100} queue-opts))
-       (q/start)))
+   (-> (pgqueue/new->PGQueue (merge {:table-name "jobs" :polling-interval 100} queue-opts))))
 
 (deftest test-listen-emits-notification
   (testing "should notify subscriber once new message arrives"
     (let [queue (build-queue {:datasource (test.helper/datasource)})
-          spy   (atom {})]
+          spy   (atom {})
+          queue (q/start queue {:callback (fn [job] (reset! spy job))})]
 
-     (q/subscribe queue (fn [job] (reset! spy job)))
      (q/push queue nil)
      @(future (Thread/sleep 2000)
+        (println "SPY:" @spy)
         (is @spy)
         (is (= "success" (:status (test.helper/fetch-job (:id @spy)))))
         (q/stop queue)))))
@@ -31,9 +31,10 @@
   (testing "should mark job with error status once exception appear on subscriber"
     (let [queue  (build-queue {:datasource (test.helper/datasource)})
           job-id (atom nil)]
-      (q/subscribe queue (fn [job]
-                           (reset! job-id (:id job))
-                           (throw (ex-info "boom!" {:error :test-failed}))))
+
+      (q/start queue {:callback (fn [job]
+                                  (reset! job-id (:id job))
+                                  (throw (ex-info "boom!" {:error :test-failed})))})
       (q/push queue nil)
       @(future
          (Thread/sleep 1000)
@@ -42,74 +43,55 @@
            (q/stop queue))))))
 
 
-(deftest test-subscribe-behaviour
-  (testing "should claim for available jobs once a new subscriber is attached to que queue"
-    (let [queue  (build-queue {:datasource (test.helper/datasource)})
-          job-id (atom nil)]
-
-        (is (zero? (count (test.helper/fetch-new-jobs))))
-        (test.helper/insert-job (.getBytes "payload")) ;; insert payload before any subscriber attached
-        (is (= 1 (count (test.helper/fetch-new-jobs))))
-
-        (q/subscribe queue (fn [job] (reset! job-id (:id job))))
-
-        @(future
-           (Thread/sleep 1000)
-           (let [job (test.helper/fetch-job @job-id)]
-             (is (= "success" (:status job)))
-             (q/stop queue))))))
-
 (deftest test-subscribe-process
   (testing "should update job status to running while subscriber is processing"
-    (let [queue (build-queue {:datasource (test.helper/datasource)})
-          job-id (atom nil)]
+    (let [spy (atom nil)
+          queue (build-queue {:datasource (test.helper/datasource)})
+          queue (q/start queue {:callback (fn [job]
+                                            (is (= "running" (:status job)))
+                                            (reset! spy (:id job)))})]
 
       (q/push queue (.getBytes "payload"))
-      (q/subscribe queue (fn [job]
-                           (is (= "payload" (String. (:payload job))))
-                           (is (= "running" (:status job)))
-                           (reset! job-id (:id job))))
 
       @(future
          (Thread/sleep 500)
-         (let [job (test.helper/fetch-job @job-id)]
+         (let [job (test.helper/fetch-job @spy)]
            (is (= "success" (:status job)))
            (q/stop queue))))))
 
-#_(deftest test-ordered-payload
-   (testing "should respect insertion order when fetching new jobs"
-    (let [queue (build-queue {:datasource (test.helper/datasource)})
-          spy (atom [])]
+(deftest test-ordered-payload
+ (testing "should respect insertion order when fetching new jobs"
+  (let [queue (build-queue {:datasource (test.helper/datasource)})
+        spy (atom [])]
 
-      (test.helper/insert-job (.getBytes "payload #3") 0)
-      (test.helper/insert-job (.getBytes "payload #1") -2)
-      (test.helper/insert-job (.getBytes "payload #2") -1)
+    (test.helper/insert-job (.getBytes "payload #3") 0)
+    (test.helper/insert-job (.getBytes "payload #1") -2)
+    (test.helper/insert-job (.getBytes "payload #2") -1)
 
-      (println (test.helper/fetch-new-jobs))
-      ;; insert payload before any subscriber attached
-      (is (= 3 (count (test.helper/fetch-new-jobs))))
+    ;; insert payload before any subscriber attached
+    (is (= 3 (count (test.helper/fetch-new-jobs))))
 
-      (q/subscribe queue (fn [job] (swap! spy conj (String. (:payload job)))))
+    (let [queue (q/start queue {:callback (fn [job]
+                                            (Thread/sleep 50)
+                                            (swap! spy conj (String. (:payload job))))})]
+
       (q/push queue (.getBytes "payload #4"))
-
       @(future
          (Thread/sleep 800)
          (is (= ["payload #1" "payload #2" "payload #3" "payload #4"] @spy))
-         (q/stop queue)))))
+         (q/stop queue))))))
 
 (deftest test-multiple-queues
   (testing "should support multiple queues"
-    (let [invoicing-queue (build-queue {:queue-name "invoicing-queue" :datasource (test.helper/datasource)})
+    (let [invoicing-spy (atom [])
+          campaign-spy (atom [])
+          invoicing-queue (build-queue {:queue-name "invoicing-queue" :datasource (test.helper/datasource)})
           campaign-queue  (build-queue {:queue-name "campaign-queue" :datasource (test.helper/datasource)})
-          invoicing-spy (atom [])
-          campaign-spy (atom [])]
-
-      (q/subscribe invoicing-queue (fn [job]
-                                     (Thread/sleep 100) ;; force long task
-                                     (swap! invoicing-spy conj (String. (:payload job)))))
-
-      (q/subscribe campaign-queue  (fn [job]
-                                     (swap! campaign-spy conj (String. (:payload job)))))
+          invoicing-queue (q/start invoicing-queue {:callback (fn [job]
+                                                                (Thread/sleep 100) ;; force long task
+                                                                (swap! invoicing-spy conj (String. (:payload job))))})
+          campaign-queue  (q/start campaign-queue  {:callback (fn [job]
+                                                                (swap! campaign-spy conj (String. (:payload job))))})]
 
       (q/push invoicing-queue (.getBytes "invoicing #1"))
       (q/push invoicing-queue (.getBytes "invoicing #2"))

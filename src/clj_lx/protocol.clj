@@ -1,7 +1,6 @@
 (ns clj-lx.protocol)
 
 (defprotocol QueueProtocol
-  (-start [this])
+  (-start [this worker])
   (-stop [this])
-  (-push [this payload])
-  (-subscribe [this callback]))
+  (-push [this payload]))
