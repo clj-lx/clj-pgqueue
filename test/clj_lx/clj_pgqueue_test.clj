@@ -9,7 +9,7 @@
   (f)
   (test.helper/stop-database))
 
-(use-fixtures :once setup-db)
+(use-fixtures :each setup-db)
 
 (defn build-queue [queue-opts]
    (-> (pgqueue/new->PGQueue (merge {:table-name "jobs" :polling-interval 100} queue-opts))))
@@ -61,8 +61,8 @@
 
 (deftest test-ordered-payload
  (testing "should respect insertion order when fetching new jobs"
-  (let [queue (build-queue {:datasource (test.helper/datasource)})
-        spy (atom [])]
+   (let [queue (build-queue {:datasource (test.helper/datasource)})
+         spy   (atom [])]
 
     (test.helper/insert-job (.getBytes "payload #3") 0)
     (test.helper/insert-job (.getBytes "payload #1") -2)
