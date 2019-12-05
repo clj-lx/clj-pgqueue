@@ -22,7 +22,6 @@
 
      (q/push queue nil)
      @(future (Thread/sleep 2000)
-        (println "SPY:" @spy)
         (is @spy)
         (is (= "success" (:status (test.helper/fetch-job (:id @spy)))))
         (q/stop queue)))))
@@ -61,7 +60,7 @@
 
 (deftest test-ordered-payload
  (testing "should respect insertion order when fetching new jobs"
-   (let [queue (build-queue {:datasource (test.helper/datasource)})
+   (let [queue (build-queue {:polling-interval 100 :datasource (test.helper/datasource)})
          spy   (atom [])]
 
     (test.helper/insert-job (.getBytes "payload #3") 0)
@@ -72,7 +71,6 @@
     (is (= 3 (count (test.helper/fetch-new-jobs))))
 
     (let [queue (q/start queue {:callback (fn [job]
-                                            (Thread/sleep 50)
                                             (swap! spy conj (String. (:payload job))))})]
 
       (q/push queue (.getBytes "payload #4"))
@@ -85,8 +83,8 @@
   (testing "should support multiple queues"
     (let [invoicing-spy (atom [])
           campaign-spy (atom [])
-          invoicing-queue (build-queue {:queue-name "invoicing-queue" :datasource (test.helper/datasource)})
-          campaign-queue  (build-queue {:queue-name "campaign-queue" :datasource (test.helper/datasource)})
+          invoicing-queue (build-queue {:polling-interval 100 :queue-name "invoicing-queue" :datasource (test.helper/datasource)})
+          campaign-queue  (build-queue {:polling-interval 100 :queue-name "campaign-queue" :datasource (test.helper/datasource)})
           invoicing-queue (q/start invoicing-queue {:callback (fn [job]
                                                                 (Thread/sleep 100) ;; force long task
                                                                 (swap! invoicing-spy conj (String. (:payload job))))})

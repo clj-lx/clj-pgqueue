@@ -55,7 +55,6 @@
 (defn- start-queue* [queue worker]
   (let [worker (merge worker {:concurrent 1})
         queue  (assoc queue :executor (Executors/newFixedThreadPool (:concurrent worker)))]
-    ;;(println "calling runner with:" (:concurrent worker) (:callback worker))
     (assoc queue :runner (future (run-queue queue worker)))))
 
 (defrecord PGQueue [datasource channel]
