@@ -2,26 +2,29 @@
   (:require [next.jdbc :as jdbc]
             [clj-lx.protocol :as q]
             [next.jdbc.result-set :as rs])
-  (:import [org.postgresql PGConnection]))
+  (:import (java.util.concurrent Executor Executors)))
 
-(defn- fetch-available-job [{:keys [datasource table-name queue-name]}]
-  (jdbc/execute-one!
+(defn- fetch-available-job [{:keys [datasource table-name queue-name]} jobs-limit]
+  (jdbc/execute!
    datasource
    [(str "UPDATE " table-name
          " SET status='running' WHERE id ="
          " (SELECT id FROM " table-name
           " WHERE status='new'"
           " AND queue_name = ?"
-          " ORDER BY created_at asc, id asc FOR UPDATE SKIP LOCKED LIMIT 1)"
+          " ORDER BY created_at asc, id asc"
+          " FOR UPDATE SKIP LOCKED LIMIT " jobs-limit ")"
          "RETURNING *;") queue-name]
    {:return-keys true :builder-fn rs/as-unqualified-maps}))
+
+
 
 (defn- update-job-status [{:keys [datasource table-name]} status job-id]
   (jdbc/execute!
    datasource
    [(str "UPDATE " table-name " SET status = ?::jobs_status WHERE id = ?") status job-id]))
 
-(defn- push* [{:keys [datasource table-name queue-name]}  ^bytes payload]
+(defn- push* [{:keys [datasource table-name queue-name]} ^bytes payload]
   (jdbc/execute!
     datasource
     [(str "INSERT INTO " table-name
@@ -36,41 +39,39 @@
     (catch Exception e
       (update-job-status queue "error" (:id job)))))
 
-(defn- claim-and-run-job! [queue fn]
-  (when-let [job (fetch-available-job queue)]
-    (try-run-job! queue job fn)))
+(defn- stop-queue* [{:keys [executor runner]}]
+  (when executor
+    (.shutdown executor))
+  (when runner
+    (future-cancel runner)))
 
-(defn- start-queue* [{:keys [datasource channel] :as queue}]
-  (let [conn (.getConnection datasource)
-        _rs  (jdbc/execute! conn [(str "LISTEN " channel)])]
-    (assoc queue :connection conn)))
+(defn- run-queue [{:keys [executor polling-interval] :as queue} {:keys [callback concurrent]}]
+  (loop []
+    (doseq [job (fetch-available-job queue concurrent)]
+      (.submit executor #(try-run-job! queue job callback)))
+    (Thread/sleep polling-interval)
+    (recur)))
 
-(defn- stop-queue* [{:keys [connection]}]
-  (when connection (.close connection)))
-
-(defn- subscribe* [{poll :polling-interval conn :connection :as queue} callback]
-  (future
-    (let [pgconn (.unwrap conn PGConnection)]
-      (loop []
-        (doseq [^org.postgresql.core.Notification _notif (.getNotifications pgconn)]
-          (claim-and-run-job! queue callback))
-        (Thread/sleep poll)
-        (recur)))))
+(defn- start-queue* [queue worker]
+  (let [worker (merge worker {:concurrent 1})
+        queue  (assoc queue :executor (Executors/newFixedThreadPool (:concurrent worker)))]
+    (assoc queue :runner (future (run-queue queue worker)))))
 
 (defrecord PGQueue [datasource channel]
   q/QueueProtocol
-  (-start [this] (start-queue* this))
+  (-start [this worker] (start-queue* this worker))
   (-stop [this] (stop-queue* this))
-  (-push [this payload] (push* this payload))
-  (-subscribe [this callback] (subscribe* this callback)))
+  (-push [this payload] (push* this payload)))
 
-(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name]
+(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name concurrent]
                      :or { queue-name "default"
                            polling-interval 1000
+                           concurrent 1
                            table-name "jobs"} :as args}]
-  (map->PGQueue {:datasource       (or datasource
-                                       (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
-                 :channel          (str table-name "_channel")
-                 :table-name       table-name
-                 :queue-name       queue-name
+  (map->PGQueue {:datasource (or datasource
+                                 (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
+                 :channel (str table-name "_channel")
+                 :table-name table-name
+                 :queue-name queue-name
+                 :concurrent concurrent
                  :polling-interval polling-interval}))
