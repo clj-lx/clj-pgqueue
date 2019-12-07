@@ -35,9 +35,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	
 #### multiple queue usage	
 
-You can specify **queue name** and how many threads will handle the queue.
-a thread pool `newFixedThreadPool`  will be created with the number of threads you specify
-
+You can specify **queue name** and how many threads will handle the queue. 
+ 
 ```
 (require '[clj-pgqueue.queue :as q])
 (require '[clj-pgqueue.impl.pgqueue :as pgqueue])
