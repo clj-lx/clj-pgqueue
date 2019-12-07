@@ -55,21 +55,18 @@
         queue  (assoc queue :executor (Executors/newFixedThreadPool (:concurrent worker)))]
     (assoc queue :runner (future (run-queue queue worker)))))
 
-(defrecord PGQueue [datasource channel]
+(defrecord PGQueue [datasource]
   q/QueueProtocol
   (-start [this worker] (start-queue* this worker))
   (-stop [this] (stop-queue* this))
   (-push [this payload] (push* this payload)))
 
-(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name concurrent]
+(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name]
                      :or { queue-name "default"
                            polling-interval 1000
-                           concurrent 1
                            table-name "jobs"} :as args}]
   (map->PGQueue {:datasource (or datasource
                                  (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
-                 :channel (str table-name "_channel")
                  :table-name table-name
                  :queue-name queue-name
-                 :concurrent concurrent
                  :polling-interval polling-interval}))

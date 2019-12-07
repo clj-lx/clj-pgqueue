@@ -14,10 +14,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 #### single queue usage
 
 	(require '[clj-pgqueue.queue :as q])
-	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
-	
-	(def queue (pgqueue/new->PGQueue {:polling-interval 1000 ;; 1 second polling interval ( default value )
-	                                  :datasource datasource })
+
+	(def queue (pgqueue/new->queue {:datasource datasource })
 	(def worker {:callback (fn [job] (println "process your job" job)})
 	(q/start queue worker)
 	
@@ -30,12 +28,11 @@ You can specify **queue name** and how many threads will handle the queue.
  
 ```
 (require '[clj-pgqueue.queue :as q])
-(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 
-(def mail-queue (pgqueue/new->PGQueue {:queue-name "mail-queue"
+(def mail-queue (q/new->queue {:queue-name "mail-queue"
                                        :datasource datasource }))
 
-(def invoicing-queue (pgqueue/new->PGQueue {:queue-name "invoicing-queue" 
+(def invoicing-queue (q/new->queue {:queue-name "invoicing-queue" 
                                             :datasource datasource 
                                             :table-name "jobs"}))
 
@@ -69,8 +66,6 @@ your option) any later version.
     ;; or
     ./bin/kaocha
 
-
-
 ## Cider
 
 	clj -A:cider-clj:dev:test
@@ -79,7 +74,6 @@ your option) any later version.
 
    	clj-A:nrepl:dev
 	
-    
     
 ## Run tests from repl
 

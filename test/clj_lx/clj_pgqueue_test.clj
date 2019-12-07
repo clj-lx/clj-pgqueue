@@ -1,6 +1,5 @@
 (ns clj-lx.clj-pgqueue-test
   (:require [clojure.test :refer :all]
-            [clj-lx.impl.pgqueue :as pgqueue]
             [clj-lx.queue :as q]
             [clj-lx.helper :as test.helper]))
 
@@ -12,7 +11,7 @@
 (use-fixtures :each setup-db)
 
 (defn build-queue [queue-opts]
-   (-> (pgqueue/new->PGQueue (merge {:table-name "jobs" :polling-interval 100} queue-opts))))
+   (-> (q/new->queue (merge {:table-name "jobs" :polling-interval 100} queue-opts))))
 
 (deftest test-listen-emits-notification
   (testing "should notify subscriber once new message arrives"
