@@ -4,16 +4,6 @@
 A Clojure library designed to use Postgres as a queue storage.
 Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
-## How
-
-- There's a `jobs` table (the table name is configurable)
- - a trigger fires on `insert` and `update`, calling a function
- - a function calls `pg_notify(channel, jobid)`
- 
-- On the sql client:
- - a thread is polling the channel through the connection's `getNotifications` method
- - when a notification arrives, subscribers are notified
-
 ## Usage
 
 #### bootstrap
@@ -26,7 +16,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(require '[clj-pgqueue.queue :as q])
 	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
-	(def queue (pgqueue/new->PGQueue {:datasource datasource })
+	(def queue (pgqueue/new->PGQueue {:polling-interval 1000 ;; 1 second polling interval ( default value )
+	                                  :datasource datasource })
 	(def worker {:callback (fn [job] (println "process your job" job)})
 	(q/start queue worker)
 	
