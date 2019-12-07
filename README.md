@@ -26,9 +26,9 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(require '[clj-pgqueue.queue :as q])
 	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
-	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource }))
+	(def queue (pgqueue/new->PGQueue {:datasource datasource })
 	
-	(q/subscribe queue (fn [job] (println "process your job" job)
+	(q/start queue {:callback (fn [job] (println "process your job" job)})
 	
 	(q/push queue "payload")
 	(q/push queue "another payload")
@@ -41,15 +41,15 @@ You can specify **queue name**
 (require '[clj-pgqueue.queue :as q])
 (require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 
-(def mail-queue (q/start (pgqueue/new->PGQueue {:queue-name "mail-queue"
-                                                :datasource datasource }))
+(def mail-queue (pgqueue/new->PGQueue {:queue-name "mail-queue"
+                                       :datasource datasource }))
 
-(def invoicing-queue (q/start (pgqueue/new->PGQueue {:queue-name "invoicing-queue" 
-                                                     :datasource datasource 
-                                                     :table-name "jobs"}))
+(def invoicing-queue (pgqueue/new->PGQueue {:queue-name "invoicing-queue" 
+                                            :datasource datasource 
+                                            :table-name "jobs"}))
 
-(q/subscribe mail-queue (fn [job] (println "sending email" job)
-(q/subscribe invoicing-queue (fn [job] (println "creating invoice" job)
+(q/start mail-queue {:callback (fn [job] (println "sending email" job) })
+(q/start invoicing-queue {:callback (fn [job] (println "creating invoice" job)})
 
 (q/push invoicing-queue (.getBytes "invoice n#1"))
 (q/push mail-queue (.getBytes "confirmation email"))
