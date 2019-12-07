@@ -27,8 +27,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 	
 	(def queue (pgqueue/new->PGQueue {:datasource datasource })
-	
-	(q/start queue {:callback (fn [job] (println "process your job" job)})
+	(def worker {:callback (fn [job] (println "process your job" job)})
+	(q/start queue worker)
 	
 	(q/push queue "payload")
 	(q/push queue "another payload")
@@ -48,8 +48,11 @@ You can specify **queue name**
                                             :datasource datasource 
                                             :table-name "jobs"}))
 
-(q/start mail-queue {:callback (fn [job] (println "sending email" job) })
-(q/start invoicing-queue {:callback (fn [job] (println "creating invoice" job)})
+(def mail-worker {:callback (fn [job] (println "sending email" job) :concurrent 2})
+(q/start mail-queue mail-worker)
+
+(def invoicing-worker {:callback (fn [job] (println "creating invoice" job) :concurrent 3})
+(q/start invoicing-queue invoicing-worker)
 
 (q/push invoicing-queue (.getBytes "invoice n#1"))
 (q/push mail-queue (.getBytes "confirmation email"))
@@ -59,10 +62,8 @@ You can specify **queue name**
 		
 ## TODO
 
-- [x] use protocol based implementation (in branch `protocol-based-queue`)
-- [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism
-- [ ] api to handle notifications in parallel (q/subscribe queue fn {:parallel 3})
 - [ ] retry/backoff strategy
+- [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism
 
 ## License
 
