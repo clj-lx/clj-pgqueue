@@ -35,7 +35,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 	
 #### multiple queue usage	
 
-You can specify **queue name** 
+You can specify **queue name** and how many threads will handle the queue.
+a thread pool `newFixedThreadPool`  will be created with the number of threads you specify
 
 ```
 (require '[clj-pgqueue.queue :as q])
@@ -58,9 +59,8 @@ You can specify **queue name**
 (q/push mail-queue (.getBytes "confirmation email"))
 
 ```
-
-		
-## TODO
+	
+## todo ( help us )
 
 - [ ] retry/backoff strategy
 - [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism
