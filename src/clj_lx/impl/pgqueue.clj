@@ -17,8 +17,6 @@
          "RETURNING *;") queue-name]
    {:return-keys true :builder-fn rs/as-unqualified-maps}))
 
-
-
 (defn- update-job-status [{:keys [datasource table-name]} status job-id]
   (jdbc/execute!
    datasource
@@ -53,7 +51,7 @@
     (recur)))
 
 (defn- start-queue* [queue worker]
-  (let [worker (merge worker {:concurrent 1})
+  (let [worker (merge {:concurrent 1} worker)
         queue  (assoc queue :executor (Executors/newFixedThreadPool (:concurrent worker)))]
     (assoc queue :runner (future (run-queue queue worker)))))
 
