@@ -37,7 +37,7 @@
     (catch Exception e
       (update-job-status queue "error" (:id job)))))
 
-(defn- stop-queue* [{:keys [executor runner]}]
+(defn- stop-queue* [{:keys [datasource executor runner]}]
   (when executor
     (.shutdown executor))
   (when runner

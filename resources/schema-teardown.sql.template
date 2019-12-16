@@ -1,0 +1,2 @@
+DROP TABLE if exists :table-name;
+DROP TYPE if exists :table-name_status;

@@ -46,6 +46,18 @@ You can specify **queue name** and how many threads will handle the queue.
 (q/push mail-queue (.getBytes "confirmation email"))
 
 ```
+
+# Benchmark
+
+Create a db for testing, then supply the jdbc url to the benchmark script:
+
+```
+
+psql -c 'create database pg_queue_bench'
+
+BENCHMARK_DATABASE_URL=jdbc:postgresql://localhost/pg_queue_bench clj -A:benchmark
+
+```
 	
 ## todo ( help us )
 
