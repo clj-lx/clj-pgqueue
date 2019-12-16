@@ -4,36 +4,46 @@
             [clj-lx.bootstrap :as b]
             [clj-lx.queue :as q]))
 
-
 (def report (atom {:count 0}))
+(def total-jobs 1000)
 
-(defn report-counter [key atom old-state new-state]
-	(println key " received job " new-state))
+(defn stop-queue-watcher [queue]
+  (fn report-counter [key atom old-state {count :count}]
+    (when (= total-jobs count)
+      (println "Finished all jobs")
+      (q/stop queue))))
 
 (defn job-counter [{:keys [id] :as job}]
-	(swap! report update-in [:count] inc)
-	(println "got job " job))
+  (swap! report update-in [:count] inc))
 
 (defn run [jdbc-url]
-	(let [queue  (q/new->queue {:datasource       (jdbc/get-datasource jdbc-url)
-								:table-name       "jobs" 
-								:polling-interval 100})
-	      queue  (q/start queue {:callback job-counter})]
-	
-	(add-watch report :watcher report-counter)
-
-	(q/push queue nil)
-	@(future (Thread/sleep 1000)
-	    (q/stop queue)
-	    (println  ">>" report))))
+  (let [queue (q/new->queue {:datasource       (jdbc/get-datasource jdbc-url)
+                             :table-name       "jobs"
+                             :concurrent       10
+                             :polling-interval 100})
+        queue (q/start queue {:callback job-counter})]
+    ;;stop the queue when we process all jobs
+    (add-watch report :watcher (stop-queue-watcher queue))
+    ;; insert all data
+    (dotimes [_ total-jobs]
+      (q/push queue nil))))
+    
 
 (defn -main [& args]
-  (let [jdbc-url   (or (System/getenv "BENCHMARK_DATABASE_URL") 
-  	                   (ex-info "No BENCHMARK_DATABASE_URL env var provided" {:jdbc-url nil}))]
-    (println "tearing down benchmark db:")
+  (let [jdbc-url (or (System/getenv "BENCHMARK_DATABASE_URL") 
+                     (first args)
+                     (throw  (ex-info "No BENCHMARK_DATABASE_URL env var provided" {:jdbc-url nil})))]
+    (println "Using jdbc url: " jdbc-url)
+    (println "tearing down benchmark db")
     (b/teardown "jobs" jdbc-url)
-    (println "bootstraping benchmark db:")
+    (println "bootstraping benchmark db")
     (b/bootstrap "jobs" jdbc-url)
 
     (println "running benchmarks...")
     (run jdbc-url)))
+
+
+(comment
+  ;; run this when benchmark is running
+  ;; "select status, count(*) from jobs group by status;"
+  (-main "jdbc:postgresql://localhost/pg_queue_bench"))
