@@ -9,8 +9,10 @@
 
 (defn stop-queue-watcher [queue]
   (fn report-counter [key atom old-state {count :count}]
+    (when (= 0 (mod count 10))
+      (println "processed 10 jobs, total:" count))
     (when (= total-jobs count)
-      (println "Finished all jobs")
+      (println "finished all jobs")
       (q/stop queue))))
 
 (defn job-counter [{:keys [id] :as job}]
@@ -20,7 +22,7 @@
   (let [queue (q/new->queue {:datasource       (jdbc/get-datasource jdbc-url)
                              :table-name       "jobs"
                              :polling-interval 100})
-        queue (q/start queue {:callback job-counter :concurrent 10})]
+        queue (q/start queue {:callback job-counter :workers 10})]
     ;;stop the queue when we process all jobs
     (add-watch report :watcher (stop-queue-watcher queue))
     ;; insert all data

@@ -3,7 +3,7 @@
             [clj-lx.impl.pgqueue :as pgqueue]))
 
 
-(defn start [queueable {:keys [_concurrent _callback] :as worker}]
+(defn start [queueable {:keys [_workersk _callback] :as worker}]
  (p/-start queueable worker))
 
 (defn stop [queueable]

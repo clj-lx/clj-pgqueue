@@ -43,17 +43,17 @@
   (when runner
     (future-cancel runner)))
 
-(defn- run-queue [{:keys [executor polling-interval] :as queue} {:keys [callback concurrent]}]
+(defn- run-queue [{:keys [executor polling-interval] :as queue} {:keys [callback workers]}]
   (loop []
-    (let [jobs (fetch-available-jobs queue concurrent)]
+    (let [jobs (fetch-available-jobs queue workers)]
       (doseq [job jobs]
         (.submit executor #(try-run-job! queue job callback))))
     (Thread/sleep polling-interval)
     (recur)))
 
 (defn- start-queue* [queue opts]
-  (let [queue-opts (merge {:concurrent 1} opts)
-        queue      (assoc queue :executor (Executors/newFixedThreadPool (:concurrent queue-opts)))]
+  (let [queue-opts (merge {:workers 1} opts)
+        queue      (assoc queue :executor (Executors/newFixedThreadPool (:workers queue-opts)))]
     (assoc queue :runner (future (run-queue queue queue-opts)))))
 
 (defrecord PGQueue [datasource]

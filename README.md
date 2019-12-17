@@ -36,10 +36,10 @@ You can specify **queue name** and how many threads will handle the queue.
                                             :datasource datasource 
                                             :table-name "jobs"}))
 
-(def mail-worker {:callback (fn [job] (println "sending email" job) :concurrent 2})
+(def mail-worker {:callback (fn [job] (println "sending email" job)) :workers 2})
 (q/start mail-queue mail-worker)
 
-(def invoicing-worker {:callback (fn [job] (println "creating invoice" job) :concurrent 3})
+(def invoicing-worker {:callback (fn [job] (println "creating invoice" job)) :workers 3})
 (q/start invoicing-queue invoicing-worker)
 
 (q/push invoicing-queue (.getBytes "invoice n#1"))
@@ -52,11 +52,9 @@ You can specify **queue name** and how many threads will handle the queue.
 Create a db for testing, then supply the jdbc url to the benchmark script:
 
 ```
-
 psql -c 'create database pg_queue_bench'
 
 BENCHMARK_DATABASE_URL=jdbc:postgresql://localhost/pg_queue_bench clj -A:benchmark
-
 ```
 	
 ## todo ( help us )
