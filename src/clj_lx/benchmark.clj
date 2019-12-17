@@ -19,9 +19,8 @@
 (defn run [jdbc-url]
   (let [queue (q/new->queue {:datasource       (jdbc/get-datasource jdbc-url)
                              :table-name       "jobs"
-                             :concurrent       10
                              :polling-interval 100})
-        queue (q/start queue {:callback job-counter})]
+        queue (q/start queue {:callback job-counter :concurrent 10})]
     ;;stop the queue when we process all jobs
     (add-watch report :watcher (stop-queue-watcher queue))
     ;; insert all data

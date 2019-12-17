@@ -4,11 +4,11 @@
             [next.jdbc.result-set :as rs])
   (:import (java.util.concurrent Executor Executors)))
 
-(defn- fetch-available-job [{:keys [datasource table-name queue-name]} jobs-limit]
+(defn- fetch-available-jobs [{:keys [datasource table-name queue-name]} jobs-limit]
   (jdbc/execute!
    datasource
    [(str "UPDATE " table-name
-         " SET status='running' WHERE id ="
+         " SET status='running' WHERE id in"
          " (SELECT id FROM " table-name
           " WHERE status='new'"
           " AND queue_name = ?"
@@ -45,19 +45,20 @@
 
 (defn- run-queue [{:keys [executor polling-interval] :as queue} {:keys [callback concurrent]}]
   (loop []
-    (doseq [job (fetch-available-job queue concurrent)]
-      (.submit executor #(try-run-job! queue job callback)))
+    (let [jobs (fetch-available-jobs queue concurrent)]
+      (doseq [job jobs]
+        (.submit executor #(try-run-job! queue job callback))))
     (Thread/sleep polling-interval)
     (recur)))
 
-(defn- start-queue* [queue worker]
-  (let [worker (merge {:concurrent 1} worker)
-        queue  (assoc queue :executor (Executors/newFixedThreadPool (:concurrent worker)))]
-    (assoc queue :runner (future (run-queue queue worker)))))
+(defn- start-queue* [queue opts]
+  (let [queue-opts (merge {:concurrent 1} opts)
+        queue      (assoc queue :executor (Executors/newFixedThreadPool (:concurrent queue-opts)))]
+    (assoc queue :runner (future (run-queue queue queue-opts)))))
 
 (defrecord PGQueue [datasource]
   q/QueueProtocol
-  (-start [this worker] (start-queue* this worker))
+  (-start [this opts] (start-queue* this opts))
   (-stop [this] (stop-queue* this))
   (-push [this payload] (push* this payload)))
 
