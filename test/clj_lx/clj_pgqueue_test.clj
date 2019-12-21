@@ -11,7 +11,7 @@
 (use-fixtures :each setup-db)
 
 (defn build-queue [queue-opts]
-   (-> (q/new->queue (merge {:table-name "jobs" :polling-interval 50} queue-opts))))
+  (q/new->queue (merge {:table-name "jobs" :polling-interval 50} queue-opts)))
 
 (deftest test-listen-emits-notification
   (testing "should notify subscriber once new message arrives"
