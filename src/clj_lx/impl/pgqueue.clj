@@ -8,7 +8,7 @@
   (jdbc/execute!
    datasource
    [(str "UPDATE " table-name
-         " SET status='running' WHERE id ="
+         " SET status='running' WHERE id in "
          " (SELECT id FROM " table-name
           " WHERE status='new'"
           " AND queue_name = ?"
