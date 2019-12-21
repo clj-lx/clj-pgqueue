@@ -4,16 +4,16 @@
             [next.jdbc.result-set :as rs])
   (:import (java.util.concurrent Executor Executors)))
 
-(defn- fetch-available-job [{:keys [datasource table-name queue-name]} jobs-limit]
+(defn- fetch-available-job [{:keys [datasource table-name queue-name n-workers]}]
   (jdbc/execute!
-   datasource
+    datasource
    [(str "UPDATE " table-name
          " SET status='running' WHERE id in "
          " (SELECT id FROM " table-name
           " WHERE status='new'"
           " AND queue_name = ?"
           " ORDER BY created_at asc, id asc"
-          " FOR UPDATE SKIP LOCKED LIMIT " jobs-limit ")"
+          " FOR UPDATE SKIP LOCKED LIMIT " n-workers ")"
          "RETURNING *;") queue-name]
    {:return-keys true :builder-fn rs/as-unqualified-maps}))
 
@@ -30,9 +30,9 @@
      queue-name
      payload]))
 
-(defn- try-run-job! [queue job subscriber-fn]
+(defn- try-run-job! [{:keys [worker] :as queue} job]
   (try
-    (subscriber-fn job)
+    (worker job)
     (update-job-status queue "success" (:id job))
     (catch Exception e
       (update-job-status queue "error" (:id job)))))
@@ -43,30 +43,34 @@
   (when runner
     (future-cancel runner)))
 
-(defn- run-queue [{:keys [executor polling-interval] :as queue} {:keys [callback concurrent]}]
+(defn- run-queue [{:keys [executor polling-interval worker] :as queue}]
   (loop []
-    (doseq [job (fetch-available-job queue concurrent)]
-      (.submit executor #(try-run-job! queue job callback)))
+    (doseq [job (fetch-available-job queue)]
+      (.submit executor #(try-run-job! queue job)))
     (Thread/sleep polling-interval)
     (recur)))
 
-(defn- start-queue* [queue worker]
-  (let [worker (merge {:concurrent 1} worker)
-        queue  (assoc queue :executor (Executors/newFixedThreadPool (:concurrent worker)))]
-    (assoc queue :runner (future (run-queue queue worker)))))
+(defn- start-queue* [{:keys [n-workers] :as queue}]
+  (let [queue  (assoc queue :executor (Executors/newFixedThreadPool n-workers))]
+    (assoc queue :runner (future (run-queue queue)))))
 
 (defrecord PGQueue [datasource]
   q/QueueProtocol
-  (-start [this worker] (start-queue* this worker))
+  (-start [this] (start-queue* this))
   (-stop [this] (stop-queue* this))
   (-push [this payload] (push* this payload)))
 
-(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name]
+(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name n-workers worker]
                      :or { queue-name "default"
+                           n-workers 1
                            polling-interval 1000
                            table-name "jobs"} :as args}]
+
   (map->PGQueue {:datasource (or datasource
                                  (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
+                 :worker (or worker
+                             (throw (ex-info "Worker function must be supplied" {:error "missing_worker_fn" :args args})))
                  :table-name table-name
+                 :n-workers n-workers
                  :queue-name queue-name
                  :polling-interval polling-interval}))

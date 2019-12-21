@@ -14,10 +14,10 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 #### single queue usage
 
 	(require '[clj-pgqueue.queue :as q])
-
-	(def queue (pgqueue/new->queue {:datasource datasource })
-	(def worker {:callback (fn [job] (println "process your job" job)})
-	(q/start queue worker)
+	
+	(def worker (fn [job] (println "process your job" job))
+	(def queue (pgqueue/new->queue {:datasource datasource :worker worker})
+	(q/start queue)
 	
 	(q/push queue "payload")
 	(q/push queue "another payload")
@@ -29,18 +29,23 @@ You can specify **queue name** and how many threads will handle the queue.
 ```
 (require '[clj-pgqueue.queue :as q])
 
+(def mail-worker (fn [job] (println "sending email" job))
 (def mail-queue (q/new->queue {:queue-name "mail-queue"
-                                       :datasource datasource }))
+                               :worker mail-worker
+                               :n-workers 2
+                               :datasource datasource }))
+
+(def invoicing-worker (fn [job] (println "creating invoice" job))
 
 (def invoicing-queue (q/new->queue {:queue-name "invoicing-queue" 
-                                            :datasource datasource 
-                                            :table-name "jobs"}))
+                                    :worker invoicing-worker
+                                    :n-workers 3
+                                    :datasource datasource 
+                                    :table-name "jobs"}))
 
-(def mail-worker {:callback (fn [job] (println "sending email" job) :concurrent 2})
-(q/start mail-queue mail-worker)
 
-(def invoicing-worker {:callback (fn [job] (println "creating invoice" job) :concurrent 3})
-(q/start invoicing-queue invoicing-worker)
+(q/start mail-queue)
+(q/start invoicing-queue)
 
 (q/push invoicing-queue (.getBytes "invoice n#1"))
 (q/push mail-queue (.getBytes "confirmation email"))
