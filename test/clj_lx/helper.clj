@@ -57,7 +57,7 @@
                  ["select * from jobs where status = 'new'"]
                  {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
 
-(defn setup-database []
+(defn setup-database [table-name]
   (start-database)
-  (run-schema (database) "jobs"))
+  (run-schema (database) table-name))
 

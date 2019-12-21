@@ -3,15 +3,17 @@
             [clj-lx.queue :as q]
             [clj-lx.helper :as test.helper]))
 
+(def table-name "jobs")
+
 (defn setup-db [f]
-  (test.helper/setup-database)
+  (test.helper/setup-database table-name)
   (f)
   (test.helper/stop-database))
 
 (use-fixtures :each setup-db)
 
 (defn build-queue [queue-opts]
-  (q/new->queue (merge {:table-name "jobs" :polling-interval 50} queue-opts)))
+  (q/new->queue (merge {:table-name table-name :polling-interval 50} queue-opts)))
 
 (deftest test-listen-emits-notification
   (testing "should notify subscriber once new message arrives"
