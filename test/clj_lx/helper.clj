@@ -32,12 +32,6 @@
   (jdbc/execute-one! (datasource)
                      ["SELECT * FROM information_schema.routines where routine_name = ?" fn-name]
                      {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
-
-(defn list-triggers [trigger-name]
-  (jdbc/execute-one! (datasource)
-                     ["SELECT * FROM information_schema.triggers where trigger_name = ?" trigger-name]
-                     {:return-keys true :builder-fn rs/as-unqualified-lower-maps}))
-
 (defn fetch-job [id]
   (jdbc/execute-one! (datasource)
                      ["select * from jobs where id = ?" id]
