@@ -67,7 +67,6 @@
     (test.helper/insert-job (.getBytes "payload #1") -2)
     (test.helper/insert-job (.getBytes "payload #2") -1)
 
-    ;; insert payload before any subscriber attached
     (is (= 3 (count (test.helper/fetch-new-jobs))))
 
     (let [queue (q/start queue)]
