@@ -43,7 +43,6 @@ You can specify **queue name** and how many threads will handle the queue.
                                     :datasource datasource 
                                     :table-name "jobs"}))
 
-
 (q/start mail-queue)
 (q/start invoicing-queue)
 
@@ -51,7 +50,6 @@ You can specify **queue name** and how many threads will handle the queue.
 (q/push mail-queue (.getBytes "confirmation email"))
 
 ```
-	
 ## todo ( help us )
 
 - [ ] retry/backoff strategy
