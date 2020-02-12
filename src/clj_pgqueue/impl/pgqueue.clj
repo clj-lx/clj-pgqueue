@@ -1,6 +1,6 @@
-(ns clj-lx.impl.pgqueue
+(ns clj-pgqueue.impl.pgqueue
   (:require [next.jdbc :as jdbc]
-            [clj-lx.protocol :as q]
+            [clj-pgqueue.protocol :as q]
             [next.jdbc.result-set :as rs])
   (:import (java.util.concurrent Executor Executors)))
 

@@ -1,7 +1,7 @@
-(ns clj-lx.clj-pgqueue-test
+(ns clj-pgqueue.clj-pgqueue-test
   (:require [clojure.test :refer :all]
-            [clj-lx.queue :as q]
-            [clj-lx.helper :as test.helper]))
+            [clj-pgqueue.queue :as q]
+            [clj-pgqueue.helper :as test.helper]))
 
 (def table-name "jobs")
 

@@ -1,7 +1,7 @@
-(ns clj-lx.bootstrap-test
+(ns clj-pgqueue.bootstrap-test
   (:require [clojure.test :refer :all]
-            [clj-lx.bootstrap :as bootstrap]
-            [clj-lx.helper :as test.helper]))
+            [clj-pgqueue.bootstrap :as bootstrap]
+            [clj-pgqueue.helper :as test.helper]))
 
 (defn with-db [f]
   (test.helper/start-database)

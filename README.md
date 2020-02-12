@@ -1,6 +1,6 @@
-![](https://github.com/clj-lx/clj-pgqueue/workflows/Clojure%20CI/badge.svg)
+![](https://github.com/clj-pgqueue/clj-pgqueue/workflows/Clojure%20CI/badge.svg)
 
-# clj-lx/clj-pgqueue
+# clj-pgqueue/clj-pgqueue
 
 A Clojure library designed to use Postgres as a queue storage.
 Inspired by https://layerci.com/blog/postgres-is-the-answer/

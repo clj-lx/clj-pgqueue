@@ -1,6 +1,6 @@
-(ns clj-lx.helper
+(ns clj-pgqueue.helper
   (:require [next.jdbc :as jdbc]
-            [clj-lx.bootstrap :as bootstrap]
+            [clj-pgqueue.bootstrap :as bootstrap]
             [next.jdbc.result-set :as rs])
   (:import (io.zonky.test.db.postgres.embedded EmbeddedPostgres)))
 

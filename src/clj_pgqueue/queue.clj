@@ -1,6 +1,6 @@
-(ns clj-lx.queue
-  (:require [clj-lx.protocol :as p]
-            [clj-lx.impl.pgqueue :as pgqueue]))
+(ns clj-pgqueue.queue
+  (:require [clj-pgqueue.protocol :as p]
+            [clj-pgqueue.impl.pgqueue :as pgqueue]))
 
 
 (defn start [queueable]

@@ -1,4 +1,4 @@
-(ns clj-lx.protocol)
+(ns clj-pgqueue.protocol)
 
 (defprotocol QueueProtocol
   (-start [this])

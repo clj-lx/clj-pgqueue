@@ -2,9 +2,9 @@
   (:require
    [next.jdbc :as jdbc]
    [kaocha.repl :as kaocha.repl]
-   [clj-lx.bootstrap :as bootstrap]
-   [clj-lx.impl.pgqueue :as pgqueue]
-   [clj-lx.queue :as q])
+   [clj-pgqueue.bootstrap :as bootstrap]
+   [clj-pgqueue.impl.pgqueue :as pgqueue]
+   [clj-pgqueue.queue :as q])
   (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
 
 (defn run-all-tests []
@@ -14,7 +14,7 @@
   #_(def epg (.start (EmbeddedPostgres/builder)))
   #_(def ds (.getPostgresDatabase epg))
   (def ds (jdbc/get-datasource {:dbtype "postgres" :dbname "mping"}))
-  
+
   ;;setup tables and triggers
   (jdbc/execute! ds [(bootstrap/build-ddl "jobs")])
 

@@ -1,4 +1,4 @@
-(ns clj-lx.bootstrap
+(ns clj-pgqueue.bootstrap
   (:require [next.jdbc :as jdbc]
             [clojure.string :as string]))
 

@@ -17,7 +17,7 @@
          :test-runner {:extra-paths ["test"]
                        :extra-deps  {lambdaisland/kaocha {:mvn/version "0.0-554"}}}
 
-         :bootstrap {:main-opts ["-m" "clj-lx.bootstrap"]}
+         :bootstrap {:main-opts ["-m" "clj-pgqueue.bootstrap"]}
 
          :pack       {:extra-deps {pack/pack.alpha {:git/url "https://github.com/juxt/pack.alpha.git"
                                                     :sha "d9023b24c3d589ba6ebc66c5a25c0826ed28ead5"}}

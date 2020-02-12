@@ -29,7 +29,7 @@
   <scm>
     <url/>
     <tag>50623c0e4471c4cd5866a404c6c2c8615bf01ad8</tag>
-    <connection>scm:git:git@github.com:clj-lx/clj-pgqueue.git</connection>
-    <developerConnection>scm:git:git@github.com:clj-lx/clj-pgqueue.git</developerConnection>
+    <connection>scm:git:git@github.com:clj-pgqueue/clj-pgqueue.git</connection>
+    <developerConnection>scm:git:git@github.com:clj-pgqueue/clj-pgqueue.git</developerConnection>
   </scm>
 </project>
