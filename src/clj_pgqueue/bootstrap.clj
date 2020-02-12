@@ -1,11 +1,12 @@
 (ns clj-pgqueue.bootstrap
   (:require [next.jdbc :as jdbc]
+            [clojure.java.io :as io]
             [clojure.string :as string]))
 
 (defn build-ddl [tbl-name]
   (as-> (string/lower-case tbl-name) %
         (string/replace % "-" "_")
-        (string/replace (slurp "resources/schema.sql.template") ":table-name" %)))
+        (string/replace (slurp (io/file (io/resource "schema.sql.template"))) ":table-name" %)))
 
 (defn bootstrap [table-name jdbc-url]
   (jdbc/execute!

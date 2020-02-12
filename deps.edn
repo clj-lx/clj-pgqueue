@@ -1,4 +1,4 @@
-{:paths ["resources" "src"]
+{:paths ["src" "resources"]
  :deps  {org.clojure/clojure       {:mvn/version "1.10.1"}
          seancorfield/next.jdbc    {:mvn/version "1.0.9"}
          org.postgresql/postgresql {:mvn/version "42.2.5"}}
