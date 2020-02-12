@@ -21,6 +21,9 @@ rm clj-pgqueue.jar
 echo "Generating pom"
 clj -Spom
 
+echo "Updating pom with git tag"
+clj -A:bump -p
+
 echo "Generating JAR clj-pgqueue.jar"
 clj -A:pack  mach.pack.alpha.skinny --no-libs --project-path clj-pgqueue.jar
 

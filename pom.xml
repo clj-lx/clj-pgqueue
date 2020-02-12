@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>clj-pgqueue</groupId>
+  <artifactId>clj-pgqueue</artifactId>
+  <version>1.0.1</version>
+  <name>clj-pgqueue</name>
+  <dependencies>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojure</artifactId>
+      <version>1.10.1</version>
+    </dependency>
+    <dependency>
+      <groupId>seancorfield</groupId>
+      <artifactId>next.jdbc</artifactId>
+      <version>1.0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.2.5</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <sourceDirectory>resources</sourceDirectory>
+  </build>
+  <repositories/>
+  <scm>
+    <url/>
+    <tag>56e0f62ff59526b4f1df49c47cad432f445a0ba6</tag>
+    <connection>scm:git:git@github.com:clj-lx/clj-pgqueue.git</connection>
+    <developerConnection>scm:git:git@github.com:clj-lx/clj-pgqueue.git</developerConnection>
+  </scm>
+</project>
