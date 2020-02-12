@@ -20,7 +20,7 @@
 (defn- update-job-status [{:keys [datasource table-name]} status job-id]
   (jdbc/execute!
    datasource
-   [(str "UPDATE " table-name " SET status = ?::jobs_status WHERE id = ?") status job-id]))
+   [(str "UPDATE " table-name " SET status = ? WHERE id = ?") status job-id]))
 
 (defn- push* [{:keys [datasource table-name queue-name]} ^bytes payload]
   (jdbc/execute!

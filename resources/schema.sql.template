@@ -1,5 +1,11 @@
-CREATE TYPE :table-name_status AS ENUM ('new', 'running', 'success', 'error');
-CREATE TABLE :table-name (id SERIAL, queue_name varchar, payload bytea, status :table-name_status, created_at timestamp, updated_at timestamp);
+CREATE TABLE IF NOT EXISTS :table-name (
+    id SERIAL,
+    queue_name varchar,
+    payload bytea,
+    status varchar,
+    created_at timestamp default now(),
+    updated_at timestamp
+);
 
 CREATE INDEX :table-name_claim_idx ON :table-name (status, queue_name)
     WHERE (status = 'new');
