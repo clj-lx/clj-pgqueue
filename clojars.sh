@@ -16,7 +16,10 @@ then
 fi
 
 echo "Cleaning previous jar"
-rm clj_pgqueue.jar
+if [ -f clj_pgqueue]
+then
+    rm clj_pgqueue.jar
+fi
 
 echo "Generating pom"
 clj -Spom
