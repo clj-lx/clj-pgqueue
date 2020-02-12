@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+JAR=clj_pgqueue.jar
+
 Echo "Checking environment variables CLOJARS_USERNAME and CLOJARS_PASSWORD."
 
 if [ -z $CLOJARS_USERNAME ]
@@ -16,9 +18,9 @@ then
 fi
 
 echo "Cleaning previous jar"
-if [ -f clj_pgqueue]
+if [ -f "$JAR" ]
 then
-    rm clj_pgqueue.jar
+    rm $JAR
 fi
 
 echo "Generating pom"
@@ -27,8 +29,8 @@ clj -Spom
 echo "Updating pom with git tag"
 clj -A:bump -p
 
-echo "Generating JAR clj_pgqueue.jar"
-clj -A:pack  mach.pack.alpha.skinny --no-libs --project-path clj_pgqueue.jar
+echo "Generating JAR $JAR"
+clj -A:pack  mach.pack.alpha.skinny --no-libs --project-path $JAR
 
 echo "Deploying into Clojars"
 
