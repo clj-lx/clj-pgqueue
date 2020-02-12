@@ -16,7 +16,7 @@ then
 fi
 
 echo "Cleaning previous jar"
-rm clj-pgqueue.jar
+rm clj_pgqueue.jar
 
 echo "Generating pom"
 clj -Spom
@@ -24,8 +24,8 @@ clj -Spom
 echo "Updating pom with git tag"
 clj -A:bump -p
 
-echo "Generating JAR clj-pgqueue.jar"
-clj -A:pack  mach.pack.alpha.skinny --no-libs --project-path clj-pgqueue.jar
+echo "Generating JAR clj_pgqueue.jar"
+clj -A:pack  mach.pack.alpha.skinny --no-libs --project-path clj_pgqueue.jar
 
 echo "Deploying into Clojars"
 

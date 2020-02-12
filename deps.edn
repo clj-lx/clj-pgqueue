@@ -27,4 +27,4 @@
                 :extra-deps {com.workframe/garamond {:mvn/version "0.4.0"}}}
 
          :deploy {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
-                  :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "clj-pgqueue.jar"]}}}
+                  :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "clj_pgqueue.jar"]}}}
