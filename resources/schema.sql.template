@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS :table-name (
     updated_at timestamp
 );
 
-CREATE INDEX :table-name_claim_idx ON :table-name (status, queue_name)
+CREATE INDEX IF NOT EXISTS :table-name_claim_idx ON :table-name (status, queue_name)
     WHERE (status = 'new');
