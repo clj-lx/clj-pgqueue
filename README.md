@@ -1,5 +1,4 @@
 ![](https://github.com/clj-lx/clj-pgqueue/workflows/Clojure%20CI/badge.svg)
-[![Clojars Project](https://img.shields.io/clojars/v/clj-pgqueue.svg)](https://clojars.org/clj-pgqueue)
 
 # clj-lx/clj-pgqueue
 
@@ -8,16 +7,8 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 
 ## install
 
-Leiningen/Boot
+[![Clojars Project](https://img.shields.io/clojars/v/clj-pgqueue.svg)](https://clojars.org/clj-pgqueue)
 
-```
-[clj-pgqueue "1.0.0"]
-```
-
-Clojure CLI/deps.edn
-```
-clj-pgqueue {:mvn/version "1.0.0"}
-```
 
 ## How
 
