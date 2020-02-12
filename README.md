@@ -11,12 +11,12 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 Leiningen/Boot
 
 ```
-[clj-pgqueue "0.1.0"]
+[clj-pgqueue "1.0.0"]
 ```
 
 Clojure CLI/deps.edn
 ```
-clj-pgqueue {:mvn/version "0.1.0"}
+clj-pgqueue {:mvn/version "1.0.0"}
 ```
 
 ## How
