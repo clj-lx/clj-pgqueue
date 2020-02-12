@@ -1,8 +1,33 @@
 ![](https://github.com/clj-lx/clj-pgqueue/workflows/Clojure%20CI/badge.svg)
+[![Clojars Project](https://img.shields.io/clojars/v/clj-pgqueue.svg)](https://clojars.org/clj-pgqueue)
+
 # clj-lx/clj-pgqueue
 
 A Clojure library designed to use Postgres as a queue storage.
 Inspired by https://layerci.com/blog/postgres-is-the-answer/
+
+## install
+
+Leiningen/Boot
+
+```
+[clj-pgqueue "0.1.0"]
+```
+
+Clojure CLI/deps.edn
+```
+clj-pgqueue {:mvn/version "0.1.0"}
+```
+
+## How
+
+- There's a `jobs` table (the table name is configurable)
+ - a trigger fires on `insert` and `update`, calling a function
+ - a function calls `pg_notify(channel, jobid)`
+
+- On the sql client:
+ - a thread is polling the channel through the connection's `getNotifications` method
+ - when a notification arrives, subscribers are notified
 
 ## Usage
 
@@ -14,46 +39,45 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 #### single queue usage
 
 	(require '[clj-pgqueue.queue :as q])
-	
-	(def worker (fn [job] (println "process your job" job))
-	(def queue (pgqueue/new->queue {:datasource datasource :worker worker})
-	(q/start queue)
-	
+	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
+
+	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource }))
+
+	(q/subscribe queue (fn [job] (println "process your job" job)
+
 	(q/push queue "payload")
 	(q/push queue "another payload")
-	
-#### multiple queue usage	
 
-You can specify **queue name** and how many threads will handle the queue. 
- 
+#### multiple queue usage
+
+You can specify **queue name**
+
 ```
 (require '[clj-pgqueue.queue :as q])
+(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 
-(def mail-worker (fn [job] (println "sending email" job))
-(def mail-queue (q/new->queue {:queue-name "mail-queue"
-                               :worker mail-worker
-                               :n-workers 2
-                               :datasource datasource }))
+(def mail-queue (q/start (pgqueue/new->PGQueue {:queue-name "mail-queue"
+                                                :datasource datasource }))
 
-(def invoicing-worker (fn [job] (println "creating invoice" job))
+(def invoicing-queue (q/start (pgqueue/new->PGQueue {:queue-name "invoicing-queue"
+                                                     :datasource datasource
+                                                     :table-name "jobs"}))
 
-(def invoicing-queue (q/new->queue {:queue-name "invoicing-queue" 
-                                    :worker invoicing-worker
-                                    :n-workers 3
-                                    :datasource datasource 
-                                    :table-name "jobs"}))
-
-(q/start mail-queue)
-(q/start invoicing-queue)
+(q/subscribe mail-queue (fn [job] (println "sending email" job)
+(q/subscribe invoicing-queue (fn [job] (println "creating invoice" job)
 
 (q/push invoicing-queue (.getBytes "invoice n#1"))
 (q/push mail-queue (.getBytes "confirmation email"))
 
 ```
-## todo ( help us )
 
-- [ ] retry/backoff strategy
+
+## TODO
+
+- [x] use protocol based implementation (in branch `protocol-based-queue`)
 - [ ] detect https://github.com/impossibl/pgjdbc-ng for a more efficient listening mechanism
+- [ ] api to handle notifications in parallel (q/subscribe queue fn {:parallel 3})
+- [ ] retry/backoff strategy
 
 ## License
 
@@ -69,15 +93,18 @@ your option) any later version.
     ;; or
     ./bin/kaocha
 
+
+
 ## Cider
 
 	clj -A:cider-clj:dev:test
-	
+
 ## nRepl
 
    	clj-A:nrepl:dev
-	
-    
+
+
+
 ## Run tests from repl
 
     (user/run-all-tests)
