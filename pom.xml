@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>clj-pgqueue</groupId>
   <artifactId>clj-pgqueue</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
   <name>clj-pgqueue</name>
   <dependencies>
     <dependency>
@@ -28,8 +28,8 @@
   <repositories/>
   <scm>
     <url/>
-    <tag>50623c0e4471c4cd5866a404c6c2c8615bf01ad8</tag>
-    <connection>scm:git:git@github.com:clj-pgqueue/clj-pgqueue.git</connection>
-    <developerConnection>scm:git:git@github.com:clj-pgqueue/clj-pgqueue.git</developerConnection>
+    <tag>a2fa19150e5aebacdd0d879b0537696a8ccae6c1</tag>
+    <connection>scm:git:git@github.com:clj-lx/clj-pgqueue.git</connection>
+    <developerConnection>scm:git:git@github.com:clj-lx/clj-pgqueue.git</developerConnection>
   </scm>
 </project>
