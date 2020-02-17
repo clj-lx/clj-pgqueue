@@ -54,18 +54,13 @@
   (let [queue  (assoc queue :executor (Executors/newFixedThreadPool n-workers))]
     (assoc queue :runner (future (run-queue queue)))))
 
-(defrecord PGQueue [datasource]
+(defrecord PGQueue [datasource worker]
   q/QueueProtocol
   (-start [this] (start-queue* this))
   (-stop [this] (stop-queue* this))
   (-push [this payload] (push* this payload)))
 
-(defn new->PGQueue [{:keys [datasource polling-interval table-name queue-name n-workers worker]
-                     :or { queue-name "default"
-                           n-workers 1
-                           polling-interval 1000
-                           table-name "jobs"} :as args}]
-
+(defn new->PGQueue [datasource worker {:keys [polling-interval table-name queue-name n-workers] :as args}]
   (map->PGQueue {:datasource (or datasource
                                  (throw (ex-info "Datasource is required" {:error "missing_datasource" :args args})))
                  :worker (or worker

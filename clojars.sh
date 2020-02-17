@@ -27,7 +27,8 @@ echo "Generating pom"
 clj -Spom
 
 echo "Updating pom with git tag"
-clj -A:bump -p
+INCREMENT_TYPE=$TYPE || "patch"
+clj -A:bump $INCREMENT_TYPE -p --tag
 
 echo "Generating JAR $JAR"
 clj -A:pack  mach.pack.alpha.skinny --no-libs --project-path $JAR
@@ -37,3 +38,5 @@ echo "Deploying into Clojars"
 clojure -A:deploy
 
 echo "Done"
+
+

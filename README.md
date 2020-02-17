@@ -20,14 +20,14 @@ Inspired by https://layerci.com/blog/postgres-is-the-answer/
 #### single queue usage
 
 	(require '[clj-pgqueue.queue :as q])
-	(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 
-	(def queue (q/start (pgqueue/new->PGQueue {:datasource datasource }))
+    (defn worker [job] 
+      (println "processing " job))
+      
+	(def queue (-> (q/new->queue datasource worker) (q/start)))
 
-	(q/subscribe queue (fn [job] (println "process your job" job)
-
-	(q/push queue "payload")
-	(q/push queue "another payload")
+	(q/push queue (.getBytes "payload"))
+	(q/push queue (.getBytes "another payload"))
 
 #### multiple queue usage
 
@@ -35,17 +35,18 @@ You can specify **queue name**
 
 ```
 (require '[clj-pgqueue.queue :as q])
-(require '[clj-pgqueue.impl.pgqueue :as pgqueue])
 
-(def mail-queue (q/start (pgqueue/new->PGQueue {:queue-name "mail-queue"
-                                                :datasource datasource }))
+(defn email-worker [job] 
+  (println "sending email worker"))
+  
+(defn invoice-worker [job]
+  (pritnln "invoice worker"))  
 
-(def invoicing-queue (q/start (pgqueue/new->PGQueue {:queue-name "invoicing-queue"
-                                                     :datasource datasource
-                                                     :table-name "jobs"}))
+(def mail-queue (-> (q/new->queue datasource email-worker {:queue-name "mail-queue"}) 
+                    (q/start)))
 
-(q/subscribe mail-queue (fn [job] (println "sending email" job)
-(q/subscribe invoicing-queue (fn [job] (println "creating invoice" job)
+(def invoicing-queue (-> (q/new->queue datasource invoice-worker {:queue-name "invoicing-queue"}) 
+                         (q/start)))
 
 (q/push invoicing-queue (.getBytes "invoice n#1"))
 (q/push mail-queue (.getBytes "confirmation email"))

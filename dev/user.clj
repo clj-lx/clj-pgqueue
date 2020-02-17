@@ -4,27 +4,24 @@
    [kaocha.repl :as kaocha.repl]
    [clj-pgqueue.bootstrap :as bootstrap]
    [clj-pgqueue.impl.pgqueue :as pgqueue]
-   [clj-pgqueue.queue :as q])
-  (:import [io.zonky.test.db.postgres.embedded EmbeddedPostgres]))
+   [clj-pgqueue.queue :as q]))
 
 (defn run-all-tests []
   (kaocha.repl/run :unit))
 
+(defn named-args [& {:keys [a b]}]
+  (println a b))
+
+(apply named-args {:a 1})
+
 (comment
-  #_(def epg (.start (EmbeddedPostgres/builder)))
-  #_(def ds (.getPostgresDatabase epg))
+  (run-all-tests)
   (def ds (jdbc/get-datasource {:dbtype "postgres" :dbname "mping"}))
 
-  ;;setup tables and triggers
-  (jdbc/execute! ds [(bootstrap/build-ddl "jobs")])
-
+  (q/new->queue  ds println)
   (def queue
-    (-> (pgqueue/new->PGQueue {:datasource ds})
-        (q/start)))
+    (->))
 
-  (q/subscribe queue #(println "GOT NOTIFICATION" (java.util.Date.) %))
-  (q/push queue nil)
-  (q/stop queue)
 
   "end-comment-here")
 

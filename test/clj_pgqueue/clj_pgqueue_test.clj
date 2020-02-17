@@ -12,14 +12,15 @@
 
 (use-fixtures :each setup-db)
 
-(defn build-queue [queue-opts]
-  (q/new->queue (merge {:table-name table-name :polling-interval 50} queue-opts)))
+(defn build-queue [datasource worker options]
+  (q/new->queue datasource worker
+                 (merge {:table-name table-name :polling-interval 50} options)))
 
 (deftest test-listen-emits-notification
-  (testing "should notify subscriber once new message arrives"
+  (testing "should notify worker once new message arrives"
     (let [spy   (atom {})
-          queue (build-queue {:worker (fn [job] (reset! spy job))
-                              :datasource (test.helper/datasource)})
+          worker (fn [job] (reset! spy job))
+          queue (build-queue (test.helper/datasource) worker {})
           queue (q/start queue)]
 
      (q/push queue nil)
@@ -29,12 +30,12 @@
         (q/stop queue)))))
 
 (deftest test-exception-marks-error-status
-  (testing "should mark job with error status once exception appear on subscriber"
+  (testing "should mark job with error status once exception raised by worker"
     (let [job-id (atom nil)
-          queue  (build-queue {:worker (fn [job]
-                                         (reset! job-id (:id job))
-                                         (throw (ex-info "boom!" {:error :test-failed})))
-                               :datasource (test.helper/datasource)})]
+          worker (fn [job]
+                   (reset! job-id (:id job))
+                   (throw (ex-info "boom!" {:error :test-failed})))
+          queue  (build-queue (test.helper/datasource) worker {})]
       (q/start queue)
       (q/push queue nil)
       @(future
@@ -45,10 +46,10 @@
 
 
 (deftest test-subscribe-process
-  (testing "should update job status to running while subscriber is processing"
+  (testing "should update job status to running while worker is processing"
     (let [spy (atom nil)
-          queue (build-queue {:worker (fn [job] (is (= "running" (:status job))) (reset! spy (:id job)))
-                              :datasource (test.helper/datasource)})
+          worker (fn [job] (is (= "running" (:status job))) (reset! spy (:id job)))
+          queue (build-queue (test.helper/datasource) worker {})
           queue (q/start queue)]
 
       (q/push queue (.getBytes "payload"))
@@ -62,8 +63,8 @@
 (deftest test-ordered-payload
  (testing "should respect insertion order when fetching new jobs"
    (let [spy   (atom [])
-         queue (build-queue {:worker (fn [job] (swap! spy conj (String. (:payload job))))
-                             :datasource (test.helper/datasource)})]
+         worker (fn [job] (swap! spy conj (String. (:payload job))))
+         queue (build-queue (test.helper/datasource) worker {})]
 
     (test.helper/insert-job (.getBytes "payload #3") 0)
     (test.helper/insert-job (.getBytes "payload #1") -2)
@@ -82,14 +83,13 @@
   (testing "should support multiple queues"
     (let [invoicing-spy (atom [])
           campaign-spy (atom [])
-          invoicing-queue (build-queue {:worker (fn [job]
-                                                  (Thread/sleep 20) ;; force long task
-                                                  (swap! invoicing-spy conj (String. (:payload job))))
-                                        :queue-name "invoicing-queue"
-                                        :datasource (test.helper/datasource)})
-          campaign-queue  (build-queue {:worker (fn [job] (swap! campaign-spy conj (String. (:payload job))))
-                                        :queue-name "campaign-queue"
-                                        :datasource (test.helper/datasource)})
+          invoicing-worker (fn [job]
+                             (Thread/sleep 20) ;; force long task
+                             (swap! invoicing-spy conj (String. (:payload job))))
+          invoicing-queue (build-queue (test.helper/datasource) invoicing-worker {:queue-name "invoicing-queue"})
+
+          campaign-worker (fn [job] (swap! campaign-spy conj (String. (:payload job))))
+          campaign-queue  (build-queue (test.helper/datasource) campaign-worker {:queue-name "campaign-queue"})
           invoicing-queue (q/start invoicing-queue)
           campaign-queue  (q/start campaign-queue)]
 
@@ -110,10 +110,9 @@
 (deftest test-parallel-processing
   (testing "should handle N jobs in parallel"
     (let [spy   (atom [])
-          queue (build-queue {:n-workers 6
-                              :worker (fn [job] (Thread/sleep 200)
-                                                (swap! spy conj (String. (:payload job))))
-                              :datasource (test.helper/datasource)})]
+          worker(fn [job] (Thread/sleep 200)
+                  (swap! spy conj (String. (:payload job))))
+          queue (build-queue (test.helper/datasource) worker {:n-workers 6})]
 
       (test.helper/insert-job (.getBytes "payload #1"))
       (test.helper/insert-job (.getBytes "payload #2"))
