@@ -56,8 +56,8 @@
         power (max 0 (- n-tasks n-threads))
         sleep (* (Math/pow 2 power) sleep-time)]
        (when (> sleep 15000)
-         (log/info "n-tasks " n-tasks " n-running-threads " n-threads " sleep(ms) " sleep))
-       sleep))
+         (log/info "[QUEUE OVER CAPACITY] n-tasks " n-tasks " n-running-threads " n-threads " sleep(ms) " sleep))
+       (min 15000 sleep)))
 
 (defn- run-queue [{:keys [executor polling-interval worker] :as queue}]
   (loop []
