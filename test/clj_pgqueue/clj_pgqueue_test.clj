@@ -14,7 +14,7 @@
 
 (defn build-queue [datasource worker options]
   (q/new->queue datasource worker
-                 (merge {:table-name table-name :polling-interval 50} options)))
+                 (merge {:table-name table-name :polling-interval 20} options)))
 
 (deftest test-listen-emits-notification
   (testing "should notify worker once new message arrives"
