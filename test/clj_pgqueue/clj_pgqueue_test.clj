@@ -126,3 +126,24 @@
              (Thread/sleep 250)
              (is (= (count @spy) 6))
              (q/stop queue))))))
+
+
+(deftest enqueing-to-future
+  (testing "should not fetch job before 'run-at' time"
+    (let [spy   (atom [])
+          worker(fn [job] (Thread/sleep 200)
+                  (swap! spy conj (String. (:payload job))))
+          queue (build-queue (test.helper/datasource) worker {:n-workers 6})]
+
+      (test.helper/insert-job (.getBytes "payload #1"))
+      (test.helper/insert-job (.getBytes "payload #2"))
+      (test.helper/insert-job (.getBytes "payload #3"))
+      (test.helper/insert-job (.getBytes "payload #4"))
+      (test.helper/insert-job (.getBytes "payload #5"))
+      (test.helper/insert-job (.getBytes "payload #6"))
+
+      (let [queue (q/start queue)]
+        @(future
+           (Thread/sleep 250)
+           (is (= (count @spy) 6))
+           (q/stop queue))))))

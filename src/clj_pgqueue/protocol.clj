@@ -3,4 +3,4 @@
 (defprotocol QueueProtocol
   (-start [this])
   (-stop [this])
-  (-push [this payload]))
+  (-push [this payload] [this payload at]))

@@ -37,10 +37,10 @@
   ([payload] (insert-job payload 0))
   ([payload diff-created-at] (insert-job payload diff-created-at "default"))
   ([payload diff-created-at queue-name]
-   (let [created-at (str "now() + interval '" diff-created-at " day'")]
+   (let [run-at (str "now() + interval '" diff-created-at " day'")]
      (jdbc/execute-one!
        (datasource)
-       [(str "insert into jobs (queue_name, payload, status, created_at, updated_at) values (?, ?,'new', " created-at " ,now())") queue-name payload]))))
+       [(str "insert into jobs (queue_name, payload, run_at, status, created_at, updated_at) values (?, ?, " run-at " ,'new', now() ,now())") queue-name payload]))))
 
 (defn fetch-new-jobs []
   (jdbc/execute! (datasource)
