@@ -75,7 +75,7 @@
     (let [queue (q/start queue)]
       (q/push queue (.getBytes "payload #4"))
       @(future
-         (Thread/sleep 250)
+         (Thread/sleep 350)
          (is (= ["payload #1" "payload #2" "payload #3" "payload #4"] @spy))
          (q/stop queue))))))
 
@@ -100,7 +100,7 @@
       (q/push campaign-queue (.getBytes "campaign #1"))
 
       @(future
-         (Thread/sleep 200)
+         (Thread/sleep 350)
          (is (= ["invoicing #1" "invoicing #2" "invoicing #3"] @invoicing-spy))
          (is (= ["campaign #1"] @campaign-spy))
          (q/stop invoicing-queue)

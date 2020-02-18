@@ -55,14 +55,16 @@
         n-threads (.getPoolSize thread-pool-executor)
         power (max 0 (- n-tasks n-threads))
         sleep (* (Math/pow 2 power) sleep-time)]
-       (log/info "n-tasks " n-tasks " n-running-threads " n-threads " sleep(ms) " sleep)
+       (println sleep)
+       (when (> sleep 15000)
+         (log/info "n-tasks " n-tasks " n-running-threads " n-threads " sleep(ms) " sleep))
        sleep))
 
 (defn- run-queue [{:keys [executor polling-interval worker] :as queue}]
   (loop []
     (doseq [job (fetch-available-job queue)]
       (.submit executor #(try-run-job! queue job)))
-    (wait-time executor polling-interval)
+    (Thread/sleep (wait-time executor polling-interval))
     (recur)))
 
 (defn- start-queue* [{:keys [n-workers] :as queue}]
