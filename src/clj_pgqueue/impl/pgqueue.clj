@@ -51,7 +51,7 @@
 
 (defn wait-time [executor sleep-time]
   (let [thread-pool-executor (cast ThreadPoolExecutor executor)
-        n-tasks (.getTaskCount thread-pool-executor)
+        n-tasks (.size (.getQueue thread-pool-executor))
         n-threads (.getPoolSize thread-pool-executor)
         power (max 0 (- n-tasks n-threads))
         sleep (* (Math/pow 2 power) sleep-time)]
