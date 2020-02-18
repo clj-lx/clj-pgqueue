@@ -55,7 +55,6 @@
         n-threads (.getPoolSize thread-pool-executor)
         power (max 0 (- n-tasks n-threads))
         sleep (* (Math/pow 2 power) sleep-time)]
-       (println sleep)
        (when (> sleep 15000)
          (log/info "n-tasks " n-tasks " n-running-threads " n-threads " sleep(ms) " sleep))
        sleep))
